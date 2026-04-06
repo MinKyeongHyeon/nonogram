@@ -1,52 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nonogram 퍼즐 게임</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="/favicon.ico" />
   </head>
   <body>
-    <div class="container">
-      <!-- 헤더 -->
-      <header class="header">
-        <h1>🎮 Nonogram 퍼즐</h1>
-        <div class="info-bar">
-          <span>문제 <strong id="puzzle-id">1</strong>: <span id="puzzle-name">...</span></span>
-          <span id="progress">진행: 0/0</span>
-        </div>
-      </header>
-
-      <!-- 게임 영역 -->
-      <main class="game-area">
-        <!-- 위 힌트 -->
-        <div class="top-space"></div>
-        <div class="clues-top" id="top-clues"></div>
-
-        <!-- 왼쪽 힌트 & 그리드 -->
-        <div class="clues-left" id="left-clues"></div>
-        <div class="grid-container">
-          <div class="grid-wrapper" id="grid"></div>
-        </div>
-      </main>
-
-      <!-- 컨트롤 -->
-      <footer class="controls">
-        <button class="btn btn-primary" id="select-eraser">✏️ 지우기</button>
-        <button class="btn btn-secondary" id="flip-mode">🔄 양면 보기</button>
-        <button class="btn btn-secondary" id="check-btn">✅ 확인</button>
-        <button class="btn btn-danger" id="reset-btn">🔄 초기화</button>
-        <select class="btn btn-select" id="puzzle-select">
-          <option value="1">1. Easy - 꽃</option>
-          <option value="2">2. Medium - 고양이</option>
-          <option value="3">3. Hard - 별</option>
-        </select>
-      </footer>
-
-      <!-- 메시지 -->
-      <div class="message" id="message"></div>
-    </div>
-
-    <script src="./game.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
