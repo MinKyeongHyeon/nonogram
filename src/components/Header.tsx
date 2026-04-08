@@ -2,21 +2,24 @@
 
 import React, { useEffect, useState } from "react";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
-import { fetchPuzzles } from "@/data/puzzles";
+import { fetchPuzzles, Puzzle } from "@/data/puzzles";
 import { Heart, Timer, RotateCcw, Undo2, Redo2 } from "lucide-react";
 
 export default function Header() {
   const { lives, status, timer, tickTimer, currentPuzzle, initPuzzle, undo, redo, reset } = usePuzzleStore();
   const [mounted, setMounted] = useState(false);
+  const [puzzlesList, setPuzzlesList] = useState<Puzzle[]>([]);
 
   useEffect(() => {
     setMounted(true);
-    // Auto load first puzzle if null
-    if (!currentPuzzle) {
-      fetchPuzzles().then(puzzles => {
-        if (puzzles.length > 0) initPuzzle(puzzles[0]);
-      });
-    }
+    fetchPuzzles().then(puzzles => {
+      const sorted = [...puzzles].sort((a, b) => a.id - b.id);
+      setPuzzlesList(sorted);
+      // Auto load first puzzle if null
+      if (!currentPuzzle && sorted.length > 0) {
+        initPuzzle(sorted[0]);
+      }
+    });
   }, [currentPuzzle, initPuzzle]);
 
   useEffect(() => {
@@ -33,10 +36,9 @@ export default function Header() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleLevelChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = parseInt(e.target.value);
-    const puzzles = await fetchPuzzles();
-    const puzzle = puzzles.find(p => p.id === id);
+    const puzzle = puzzlesList.find(p => p.id === id);
     if (puzzle) {
       initPuzzle(puzzle);
     }
@@ -52,14 +54,14 @@ export default function Header() {
           
           <select 
             onChange={handleLevelChange} 
-            value={currentPuzzle?.id || 1}
+            value={currentPuzzle?.id || ""}
             className="bg-gray-100 border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
           >
-            <option value={1}>Easy - 십자가</option>
-            <option value={2}>Easy - 하트</option>
-            <option value={3}>Medium - 집</option>
-            <option value={4}>Medium - 나무</option>
-            <option value={5}>Hard - 스마일</option>
+            {puzzlesList.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
           </select>
         </div>
 
