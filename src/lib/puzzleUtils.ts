@@ -1,4 +1,4 @@
-import { Clues, Puzzle } from '@/data/puzzles';
+import { Clues, Puzzle } from '@/types/puzzle';
 
 /**
  * 0과 1로 이루어진 2차원 배열(정답 데이터)을 받아 노노그램의 규칙에 맞는 행(Row), 열(Col) 힌트를 자동 생성합니다.

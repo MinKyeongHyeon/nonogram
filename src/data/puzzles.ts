@@ -1,115 +1,26 @@
-export interface Clues {
-  rows: number[][];
-  cols: number[][];
+import { generateCluesFromSolution } from '@/lib/puzzleUtils';
+import { Puzzle, RawPuzzle } from '@/types/puzzle';
+export type { Clues, Puzzle, RawPuzzle } from '@/types/puzzle';
+
+export function completePuzzle(raw: RawPuzzle): Puzzle {
+  return {
+    ...raw,
+    rows: raw.solution.length,
+    cols: raw.solution[0].length,
+    clues: generateCluesFromSolution(raw.solution),
+  };
 }
 
-export interface Puzzle {
-  id: number;
-  name: string;
-  rows: number;
-  cols: number;
-  solution: number[][];
-  clues: Clues;
-}
+import { puzzleLibrary } from './puzzle_library';
 
-export const puzzles: Puzzle[] = [
-  {
-    id: 1,
-    name: 'Easy - 십자가',
-    rows: 5,
-    cols: 5,
-    solution: [
-      [0, 0, 1, 0, 0],
-      [0, 0, 1, 0, 0],
-      [1, 1, 1, 1, 1],
-      [0, 0, 1, 0, 0],
-      [0, 0, 1, 0, 0]
-    ],
-    clues: {
-      rows: [[1], [1], [5], [1], [1]],
-      cols: [[1], [1], [5], [1], [1]]
-    }
-  },
-  {
-    id: 2,
-    name: 'Easy - 하트',
-    rows: 5,
-    cols: 5,
-    solution: [
-      [0, 1, 0, 1, 0],
-      [1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1],
-      [0, 1, 1, 1, 0],
-      [0, 0, 1, 0, 0]
-    ],
-    clues: {
-      rows: [[1, 1], [5], [5], [3], [1]],
-      cols: [[2], [4], [4], [4], [2]]
-    }
-  },
-  {
-    id: 3,
-    name: 'Medium - 집',
-    rows: 6,
-    cols: 5,
-    solution: [
-      [0, 0, 1, 0, 0],
-      [0, 1, 1, 1, 0],
-      [1, 1, 1, 1, 1],
-      [1, 0, 0, 0, 1],
-      [1, 0, 0, 0, 1],
-      [1, 1, 1, 1, 1]
-    ],
-    clues: {
-      rows: [[1], [3], [5], [1, 1], [1, 1], [5]],
-      cols: [[4], [2, 1], [3, 1], [2, 1], [4]]
-    }
-  },
-  {
-    id: 4,
-    name: 'Medium - 나무',
-    rows: 7,
-    cols: 5,
-    solution: [
-      [0, 0, 1, 0, 0],
-      [0, 1, 1, 1, 0],
-      [1, 1, 1, 1, 1],
-      [0, 1, 1, 1, 0],
-      [0, 0, 1, 0, 0],
-      [0, 0, 1, 0, 0],
-      [0, 0, 1, 0, 0]
-    ],
-    clues: {
-      rows: [[1], [3], [5], [3], [1], [1], [1]],
-      cols: [[1], [3], [7], [3], [1]]
-    }
-  },
-  {
-    id: 5,
-    name: 'Hard - 스마일',
-    rows: 7,
-    cols: 7,
-    solution: [
-      [0, 1, 1, 1, 1, 1, 0],
-      [1, 0, 0, 0, 0, 0, 1],
-      [1, 0, 1, 0, 1, 0, 1],
-      [1, 0, 0, 0, 0, 0, 1],
-      [1, 0, 1, 1, 1, 0, 1],
-      [1, 0, 0, 0, 0, 0, 1],
-      [0, 1, 1, 1, 1, 1, 0]
-    ],
-    clues: {
-      rows: [[5], [1, 1], [1, 1, 1, 1], [1, 1], [1, 3, 1], [1, 1], [5]],
-      cols: [[5], [1, 1], [1, 1, 1, 1], [1, 1, 1], [1, 1, 1, 1], [1, 1], [5]]
-    }
-  }
-];
+export const puzzles: Puzzle[] = puzzleLibrary;
+
 
 export async function fetchPuzzles(): Promise<Puzzle[]> {
   // Simulate network request
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(puzzles);
+      resolve(puzzleLibrary.map(p => completePuzzle(p as any)));
     }, 500);
   });
 }
@@ -117,8 +28,8 @@ export async function fetchPuzzles(): Promise<Puzzle[]> {
 export async function fetchPuzzleById(id: number): Promise<Puzzle | null> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const puzzle = puzzles.find(p => p.id === id);
-      resolve(puzzle || null);
+      const puzzle = puzzleLibrary.find(p => p.id === id);
+      resolve(puzzle ? completePuzzle(puzzle as any) : null);
     }, 500);
   });
 }
