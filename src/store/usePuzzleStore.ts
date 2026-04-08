@@ -41,14 +41,14 @@ export const usePuzzleStore = create<PuzzleState>()(
       historyIndex: -1,
 
       initPuzzle: (puzzle: Puzzle) => {
-        const emptyGrid = Array(puzzle.rows).fill(0).map(() => Array(puzzle.cols).fill(0));
+        const newGrid = Array(puzzle.rows).fill(0).map(() => Array(puzzle.cols).fill(0));
         set({
           currentPuzzle: puzzle,
-          grid: emptyGrid,
+          grid: newGrid,
           lives: MAX_LIVES,
           status: 'playing',
           timer: 0,
-          history: [{ grid: emptyGrid }],
+          history: [{ grid: newGrid }],
           historyIndex: 0,
         });
       },
@@ -64,7 +64,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         const currentVal = grid[row][col];
         const solutionVal = currentPuzzle.solution[row][col];
 
-        let newGrid = grid.map(r => [...r]);
+        const newGrid = grid.map(r => [...r]);
         let newLives = lives;
         let newStatus: PuzzleState['status'] = status;
 

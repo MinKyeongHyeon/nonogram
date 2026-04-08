@@ -1,4 +1,4 @@
-import { usePuzzleStore, CellState } from './usePuzzleStore';
+import { usePuzzleStore } from './usePuzzleStore';
 import type { Puzzle } from '@/data/puzzles';
 
 // Mock Puzzle Data
