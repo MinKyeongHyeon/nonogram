@@ -1,4 +1,4 @@
-import { Clues, Puzzle } from '@/types/puzzle';
+import { Clues, Puzzle } from "@/types/puzzle";
 
 /**
  * 0과 1로 이루어진 2차원 배열(정답 데이터)을 받아 노노그램의 규칙에 맞는 행(Row), 열(Col) 힌트를 자동 생성합니다.
@@ -27,7 +27,7 @@ export function generateCluesFromSolution(solution: number[][]): Clues {
       }
     }
     if (count > 0) rowClues.push(count);
-    
+
     // 만약 한 줄이 완전히 비어있다면 [0] 리턴
     clues.rows.push(rowClues.length > 0 ? rowClues : [0]);
   }
@@ -45,7 +45,7 @@ export function generateCluesFromSolution(solution: number[][]): Clues {
       }
     }
     if (count > 0) colClues.push(count);
-    
+
     // 만약 한 열이 완전히 비어있다면 [0] 리턴
     clues.cols.push(colClues.length > 0 ? colClues : [0]);
   }
@@ -54,7 +54,7 @@ export function generateCluesFromSolution(solution: number[][]): Clues {
 }
 
 /**
- * 브라우저 환경에서 이미지 파일(File 객체)과 이름을 입력받아 
+ * 브라우저 환경에서 이미지 파일(File 객체)과 이름을 입력받아
  * 픽셀 데이터를 분석한 뒤 즉시 완성된 Puzzle 객체(JSON)를 반환합니다.
  * @param imageFile - 업로드된 이미지 파일 객체
  * @param name - 생성할 퍼즐의 이름
@@ -70,7 +70,7 @@ export async function generatePuzzleFromImage(imageFile: File, name: string, id:
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
-        
+
         if (!ctx) {
           reject(new Error("Canvas is not supported in this environment."));
           return;
@@ -80,23 +80,23 @@ export async function generatePuzzleFromImage(imageFile: File, name: string, id:
         const height = img.height;
         canvas.width = width;
         canvas.height = height;
-        
+
         // 이미지를 캔버스에 그림
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
 
         const solution: number[][] = [];
-        
+
         // 픽셀 단위로 1과 0 판별
         for (let r = 0; r < height; r++) {
           const row: number[] = [];
           for (let c = 0; c < width; c++) {
             const i = (r * width + c) * 4;
             const rVal = data[i];
-            const gVal = data[i+1];
-            const bVal = data[i+2];
-            const alpha = data[i+3];
+            const gVal = data[i + 1];
+            const bVal = data[i + 2];
+            const alpha = data[i + 3];
 
             // 투명하거나, 컬러 평균값이 128(회색) 이상으로 밝으면 빈 칸(0)
             const rgbAvg = (rVal + gVal + bVal) / 3;
@@ -116,17 +116,18 @@ export async function generatePuzzleFromImage(imageFile: File, name: string, id:
         const puzzle: Puzzle = {
           id,
           name,
+          difficulty: "medium",
           rows: height,
           cols: width,
           solution,
-          clues
+          clues,
         };
 
         resolve(puzzle);
       };
-      
+
       img.onerror = () => reject(new Error("Failed to load image."));
-      if (typeof e.target?.result === 'string') {
+      if (typeof e.target?.result === "string") {
         img.src = e.target.result;
       }
     };
@@ -135,4 +136,3 @@ export async function generatePuzzleFromImage(imageFile: File, name: string, id:
     reader.readAsDataURL(imageFile);
   });
 }
-

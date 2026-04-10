@@ -1,3 +1,5 @@
+export type Difficulty = "easy" | "medium" | "hard";
+
 export interface Clues {
   rows: number[][];
   cols: number[][];
@@ -8,6 +10,7 @@ export interface Puzzle {
   name: string;
   rows: number;
   cols: number;
+  difficulty: Difficulty;
   solution: number[][];
   clues: Clues;
 }

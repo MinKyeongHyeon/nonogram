@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Puzzle } from '@/data/puzzles';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { Puzzle } from "@/data/puzzles";
 
 export type CellState = 0 | 1 | -1 | 2; // 0: empty, 1: filled, -1: marked X, 2: penalty X
 
@@ -12,22 +12,25 @@ interface PuzzleState {
   currentPuzzle: Puzzle | null;
   grid: CellState[][];
   lives: number;
-  status: 'idle' | 'playing' | 'gameover' | 'cleared';
+  status: "idle" | "playing" | "gameover" | "cleared";
   timer: number;
   history: HistoryStep[];
   historyIndex: number;
+  hints: number;
 
   // Actions
   initPuzzle: (puzzle: Puzzle) => void;
-  handleClick: (row: number, col: number, isRightClick?: boolean, modeOverride?: 'fill' | 'mark') => void;
+  handleClick: (row: number, col: number, isRightClick?: boolean, modeOverride?: "fill" | "mark") => void;
   undo: () => void;
   redo: () => void;
   reset: () => void;
   tickTimer: () => void;
   clearState: () => void;
+  useHint: () => boolean; // returns true if hint was used
 }
 
 const MAX_LIVES = 3;
+const MAX_HINTS = 3;
 
 export const usePuzzleStore = create<PuzzleState>()(
   persist(
@@ -35,38 +38,42 @@ export const usePuzzleStore = create<PuzzleState>()(
       currentPuzzle: null,
       grid: [],
       lives: MAX_LIVES,
-      status: 'idle',
+      status: "idle",
       timer: 0,
       history: [],
       historyIndex: -1,
+      hints: MAX_HINTS,
 
       initPuzzle: (puzzle: Puzzle) => {
-        const newGrid = Array(puzzle.rows).fill(0).map(() => Array(puzzle.cols).fill(0));
+        const newGrid = Array(puzzle.rows)
+          .fill(0)
+          .map(() => Array(puzzle.cols).fill(0));
         set({
           currentPuzzle: puzzle,
           grid: newGrid,
           lives: MAX_LIVES,
-          status: 'playing',
+          status: "playing",
           timer: 0,
           history: [{ grid: newGrid }],
           historyIndex: 0,
+          hints: MAX_HINTS,
         });
       },
 
-      handleClick: (row, col, isRightClick = false, modeOverride?: 'fill' | 'mark') => {
+      handleClick: (row, col, isRightClick = false, modeOverride?: "fill" | "mark") => {
         const { currentPuzzle, grid, status, lives, history, historyIndex } = get();
-        if (status !== 'playing' || !currentPuzzle) return;
+        if (status !== "playing" || !currentPuzzle) return;
 
         // If it's already definitively solved as filled or penalized, ignore
         if (grid[row][col] === 1 || grid[row][col] === 2) return;
 
-        const isFillMode = modeOverride ? modeOverride === 'fill' : !isRightClick;
+        const isFillMode = modeOverride ? modeOverride === "fill" : !isRightClick;
         const currentVal = grid[row][col];
         const solutionVal = currentPuzzle.solution[row][col];
 
-        const newGrid = grid.map(r => [...r]);
+        const newGrid = grid.map((r) => [...r]);
         let newLives = lives;
-        let newStatus: PuzzleState['status'] = status;
+        let newStatus: PuzzleState["status"] = status;
 
         if (isFillMode) {
           // Trying to fill
@@ -78,7 +85,7 @@ export const usePuzzleStore = create<PuzzleState>()(
             newLives -= 1;
             newGrid[row][col] = 2; // Fixed as X (penalty)
             if (newLives <= 0) {
-              newStatus = 'gameover';
+              newStatus = "gameover";
             }
           }
         } else {
@@ -117,7 +124,7 @@ export const usePuzzleStore = create<PuzzleState>()(
 
         // Check if cleared
         let isCleared = false;
-        if (newStatus !== 'gameover') {
+        if (newStatus !== "gameover") {
           isCleared = true;
           for (let r = 0; r < currentPuzzle.rows; r++) {
             for (let c = 0; c < currentPuzzle.cols; c++) {
@@ -129,7 +136,7 @@ export const usePuzzleStore = create<PuzzleState>()(
             if (!isCleared) break;
           }
           if (isCleared) {
-            newStatus = 'cleared';
+            newStatus = "cleared";
           }
         }
 
@@ -142,38 +149,40 @@ export const usePuzzleStore = create<PuzzleState>()(
           lives: newLives,
           status: newStatus,
           history: newHistory,
-          historyIndex: newHistory.length - 1
+          historyIndex: newHistory.length - 1,
         });
       },
 
       undo: () => {
         const { history, historyIndex, status } = get();
-        if (status !== 'playing' || historyIndex <= 0) return;
+        if (status !== "playing" || historyIndex <= 0) return;
         const newIndex = historyIndex - 1;
         set({
           grid: history[newIndex].grid,
-          historyIndex: newIndex
+          historyIndex: newIndex,
         });
       },
 
       redo: () => {
         const { history, historyIndex, status } = get();
-        if (status !== 'playing' || historyIndex >= history.length - 1) return;
+        if (status !== "playing" || historyIndex >= history.length - 1) return;
         const newIndex = historyIndex + 1;
         set({
           grid: history[newIndex].grid,
-          historyIndex: newIndex
+          historyIndex: newIndex,
         });
       },
 
       reset: () => {
         const { currentPuzzle } = get();
         if (!currentPuzzle) return;
-        const emptyGrid = Array(currentPuzzle.rows).fill(0).map(() => Array(currentPuzzle.cols).fill(0));
+        const emptyGrid = Array(currentPuzzle.rows)
+          .fill(0)
+          .map(() => Array(currentPuzzle.cols).fill(0));
         set({
           grid: emptyGrid,
           lives: MAX_LIVES,
-          status: 'playing',
+          status: "playing",
           timer: 0,
           history: [{ grid: emptyGrid }],
           historyIndex: 0,
@@ -182,32 +191,79 @@ export const usePuzzleStore = create<PuzzleState>()(
 
       tickTimer: () => {
         const { status } = get();
-        if (status === 'playing') {
-          set(state => ({ timer: state.timer + 1 }));
+        if (status === "playing") {
+          set((state) => ({ timer: state.timer + 1 }));
         }
       },
 
-      clearState: () => set({
-        currentPuzzle: null,
-        grid: [],
-        lives: MAX_LIVES,
-        status: 'idle',
-        timer: 0,
-        history: [],
-        historyIndex: -1,
-      })
+      clearState: () =>
+        set({
+          currentPuzzle: null,
+          grid: [],
+          lives: MAX_LIVES,
+          status: "idle",
+          timer: 0,
+          history: [],
+          historyIndex: -1,
+          hints: MAX_HINTS,
+        }),
+
+      useHint: () => {
+        const { currentPuzzle, grid, status, hints, history, historyIndex } = get();
+        if (status !== "playing" || !currentPuzzle || hints <= 0) return false;
+
+        // Find all unfilled correct cells
+        const candidates: [number, number][] = [];
+        for (let r = 0; r < currentPuzzle.rows; r++) {
+          for (let c = 0; c < currentPuzzle.cols; c++) {
+            if (currentPuzzle.solution[r][c] === 1 && grid[r][c] !== 1) {
+              candidates.push([r, c]);
+            }
+          }
+        }
+        if (candidates.length === 0) return false;
+
+        // Pick random cell and reveal it
+        const [row, col] = candidates[Math.floor(Math.random() * candidates.length)];
+        const newGrid = grid.map((r) => [...r]);
+        newGrid[row][col] = 1;
+
+        // Check if cleared
+        let isCleared = true;
+        for (let r = 0; r < currentPuzzle.rows; r++) {
+          for (let c = 0; c < currentPuzzle.cols; c++) {
+            if (currentPuzzle.solution[r][c] === 1 && newGrid[r][c] !== 1) {
+              isCleared = false;
+              break;
+            }
+          }
+          if (!isCleared) break;
+        }
+
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push({ grid: newGrid });
+
+        set({
+          grid: newGrid,
+          hints: hints - 1,
+          status: isCleared ? "cleared" : status,
+          history: newHistory,
+          historyIndex: newHistory.length - 1,
+        });
+        return true;
+      },
     }),
     {
-      name: 'nonogram-storage',
-      partialize: (state) => ({ 
+      name: "nonogram-storage",
+      partialize: (state) => ({
         currentPuzzle: state.currentPuzzle,
         grid: state.grid,
         lives: state.lives,
         status: state.status,
         timer: state.timer,
         history: state.history,
-        historyIndex: state.historyIndex
+        historyIndex: state.historyIndex,
       }),
-    }
-  )
+    },
+  ),
 );
