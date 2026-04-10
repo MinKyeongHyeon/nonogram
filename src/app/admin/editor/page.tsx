@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Difficulty } from "@/types/puzzle";
 import { generateCluesFromSolution } from "@/lib/puzzleUtils";
+import { validatePuzzle } from "@/lib/nonogramSolver";
 
 export default function AdminEditorPage() {
   const [mounted, setMounted] = useState(false);
@@ -14,6 +15,7 @@ export default function AdminEditorPage() {
   const [painting, setPainting] = useState<boolean | null>(null);
   const [history, setHistory] = useState<number[][][]>(() => [makeEmptyGrid(5)]);
   const [historyIdx, setHistoryIdx] = useState(0);
+  const [validation, setValidation] = useState<{ valid: boolean; reason?: string } | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -59,6 +61,7 @@ export default function AdminEditorPage() {
     setGrid(newGrid);
     setHistory([newGrid]);
     setHistoryIdx(0);
+    setValidation(null);
   };
 
   const handleCellDown = (r: number, c: number) => {
@@ -67,6 +70,7 @@ export default function AdminEditorPage() {
     const newGrid = grid.map((row) => [...row]);
     newGrid[r][c] = newVal;
     setGrid(newGrid);
+    setValidation(null);
   };
 
   const handleCellEnter = (r: number, c: number) => {
@@ -106,10 +110,76 @@ export default function AdminEditorPage() {
   const clues = generateCluesFromSolution(grid);
   const filledCount = grid.flat().filter((c) => c === 1).length;
 
+  const handleValidate = () => {
+    if (filledCount === 0) {
+      setValidation({ valid: false, reason: "Grid is empty" });
+      return;
+    }
+    const result = validatePuzzle(grid, clues.rows, clues.cols);
+    setValidation(result);
+  };
+
   if (!mounted)
     return (
-      <main className="min-h-screen bg-surface">
-        <div className="h-16" />
+      <main className="min-h-screen bg-surface text-on-surface font-body">
+        {/* Header skeleton */}
+        <header className="w-full bg-surface/70 backdrop-blur-xl shadow-pudding sticky top-0 z-50">
+          <div className="flex items-center gap-3 px-4 md:px-8 h-16 max-w-6xl mx-auto">
+            <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+            <div className="w-28 h-6 rounded-full bg-surface-container animate-shimmer" />
+            <div className="flex-1" />
+            <div className="w-32 h-10 rounded-full bg-surface-container animate-shimmer" />
+          </div>
+        </header>
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 flex flex-col md:flex-row gap-8">
+          {/* Grid canvas skeleton */}
+          <div className="flex-1 flex flex-col items-center gap-6">
+            {/* Toolbar */}
+            <div className="flex items-center gap-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="w-10 h-10 rounded-lg bg-surface-container animate-shimmer" />
+              ))}
+            </div>
+            {/* Grid */}
+            <div className="inline-grid bg-surface-container-lowest border-2 border-outline-variant/40 rounded-xl p-3 shadow-pudding">
+              <div className="grid grid-cols-5 gap-px">
+                {Array.from({ length: 25 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-9 h-9 rounded-sm bg-surface-container animate-shimmer"
+                    style={{ animationDelay: `${(i % 5) * 0.08}s` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Right panel skeleton */}
+          <div className="w-full md:w-72 shrink-0 space-y-6">
+            <div className="bg-surface-container-lowest rounded-xl shadow-pudding p-5 space-y-5">
+              <div className="w-20 h-4 rounded bg-surface-container animate-shimmer" />
+              <div className="space-y-1">
+                <div className="w-12 h-3 rounded bg-surface-container animate-shimmer" />
+                <div className="w-full h-9 rounded-lg bg-surface-container animate-shimmer" />
+              </div>
+              <div className="space-y-1">
+                <div className="w-16 h-3 rounded bg-surface-container animate-shimmer" />
+                <div className="flex gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex-1 h-9 rounded-lg bg-surface-container animate-shimmer" />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="w-16 h-3 rounded bg-surface-container animate-shimmer" />
+                <div className="flex gap-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex-1 h-9 rounded-lg bg-surface-container animate-shimmer" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
     );
 
@@ -212,6 +282,34 @@ export default function AdminEditorPage() {
           <p className="text-xs text-on-surface-variant">
             {filledCount} cells filled • {size}×{size} grid
           </p>
+
+          {/* Validation */}
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={handleValidate}
+              className="bg-secondary text-on-secondary px-5 py-2 rounded-full text-sm font-headline font-bold shadow-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-base">verified</span>
+              Validate Puzzle
+            </button>
+            {validation && (
+              <div
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${
+                  validation.valid
+                    ? "bg-tertiary-container text-on-tertiary-container"
+                    : "bg-error-container text-on-error-container"
+                }`}
+              >
+                <span
+                  className="material-symbols-outlined text-base"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {validation.valid ? "check_circle" : "error"}
+                </span>
+                {validation.valid ? "Solvable by logic alone!" : validation.reason}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Panel — Metadata */}

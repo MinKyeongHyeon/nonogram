@@ -70,23 +70,73 @@ export default function PuzzlePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-surface">
-        {/* Skeleton header */}
-        <div className="h-16 bg-surface/70 backdrop-blur-xl shadow-pudding flex items-center px-4 md:px-8 gap-3">
-          <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
-          <div className="w-24 h-5 rounded-full bg-surface-container animate-shimmer" />
-          <div className="flex-1" />
-          <div className="w-20 h-7 rounded-full bg-surface-container animate-shimmer" />
+      <main className="min-h-screen bg-surface text-on-surface font-body overflow-hidden">
+        {/* Desktop Nav Skeleton */}
+        <header className="w-full px-8 py-4 bg-surface hidden md:block">
+          <nav className="flex justify-between items-center w-full max-w-[1440px] mx-auto">
+            <div className="w-48 h-8 rounded-full bg-surface-container animate-shimmer" />
+            <div className="flex items-center gap-8">
+              <div className="w-16 h-5 rounded-full bg-surface-container animate-shimmer" />
+              <div className="w-28 h-5 rounded-full bg-surface-container animate-shimmer" />
+              <div className="w-24 h-5 rounded-full bg-surface-container animate-shimmer" />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-surface-container animate-shimmer" />
+              <div className="w-8 h-8 rounded-full bg-surface-container animate-shimmer" />
+            </div>
+          </nav>
+        </header>
+
+        {/* Mobile Header Skeleton */}
+        <header className="md:hidden w-full px-4 py-3 bg-surface/70 backdrop-blur-xl shadow-pudding sticky top-0 z-50">
+          <div className="flex items-center justify-between">
+            <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+            <div className="w-20 h-7 rounded-full bg-surface-container animate-shimmer" />
+            <div className="flex items-center gap-1">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="w-5 h-5 rounded-full bg-surface-container animate-shimmer" />
+              ))}
+            </div>
+          </div>
+        </header>
+
+        <div className="flex h-[calc(100vh-80px)] w-full max-w-[1440px] mx-auto px-4 gap-6">
+          {/* Desktop Sidebar Skeleton */}
+          <div className="hidden md:flex flex-col gap-3 mt-2 ml-4 w-20">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="w-14 h-14 rounded-xl bg-surface-container animate-shimmer" />
+            ))}
+          </div>
+
+          {/* Main Content Skeleton */}
+          <div className="flex-grow flex flex-col items-center justify-center py-4">
+            {/* Game Info Bar (desktop) */}
+            <div className="hidden md:flex w-full max-w-4xl justify-between items-center mb-8 px-4">
+              <div className="w-56 h-12 rounded-xl bg-surface-container animate-shimmer" />
+              <div className="flex items-center gap-4">
+                <div className="w-28 h-10 rounded-full bg-surface-container animate-shimmer" />
+                <div className="w-20 h-10 rounded-full bg-surface-container animate-shimmer" />
+              </div>
+            </div>
+
+            {/* Puzzle Grid Skeleton */}
+            <div className="grid grid-cols-5 gap-1.5">
+              {Array.from({ length: 25 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="w-10 h-10 rounded-md bg-surface-container animate-shimmer"
+                  style={{ animationDelay: `${(i % 5) * 0.1}s` }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
-        {/* Skeleton grid */}
-        <div className="flex justify-center py-12">
-          <div className="grid grid-cols-5 gap-1.5">
-            {Array.from({ length: 25 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-10 h-10 rounded-md bg-surface-container animate-shimmer"
-                style={{ animationDelay: `${(i % 5) * 0.1}s` }}
-              />
+
+        {/* Mobile Bottom Bar Skeleton */}
+        <div className="md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest/70 backdrop-blur-xl px-4 pb-8 pt-3 rounded-t-[2rem]">
+          <div className="flex justify-around items-center">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="w-12 h-12 rounded-full bg-surface-container animate-shimmer" />
             ))}
           </div>
         </div>

@@ -182,8 +182,9 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {packs.map((pack) => (
-              <div
+              <Link
                 key={pack.title}
+                href={`/pack/${pack.difficulty.toLowerCase()}`}
                 className="bg-surface-container-lowest p-6 rounded-xl space-y-4 shadow-pudding border border-outline-variant/10 hover:-translate-y-2 transition-all"
               >
                 <div className={`aspect-video ${pack.color} rounded-lg flex items-center justify-center relative`}>
@@ -205,19 +206,15 @@ export default function Home() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {pack.puzzles.slice(0, 6).map((p) => (
-                    <Link
-                      key={p.id}
-                      href={`/puzzle/${p.id}`}
-                      className="px-3 py-1.5 bg-surface-container-low rounded-full text-sm font-medium hover:bg-surface-container transition-colors"
-                    >
+                    <span key={p.id} className="px-3 py-1.5 bg-surface-container-low rounded-full text-sm font-medium">
                       {p.name.replace(/^(Easy|Medium|Hard)\s*-\s*/, "")}
-                    </Link>
+                    </span>
                   ))}
                   {pack.puzzles.length > 6 && (
                     <span className="px-3 py-1.5 text-on-surface-variant text-sm">+{pack.puzzles.length - 6} more</span>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>

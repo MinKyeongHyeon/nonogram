@@ -69,8 +69,61 @@ export default function ProfilePage() {
 
   if (!mounted)
     return (
-      <main className="min-h-screen bg-surface">
-        <div className="h-16" />
+      <main className="min-h-screen bg-surface text-on-surface font-body pb-32 md:pb-12">
+        {/* Header skeleton */}
+        <header className="w-full bg-surface/70 backdrop-blur-xl shadow-pudding sticky top-0 z-50">
+          <div className="flex items-center gap-3 px-4 md:px-8 h-16 max-w-3xl mx-auto">
+            <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+            <div className="w-24 h-6 rounded-full bg-surface-container animate-shimmer" />
+          </div>
+        </header>
+        <div className="max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-8">
+          {/* Profile hero skeleton */}
+          <section className="flex flex-col items-center text-center space-y-4">
+            <div className="w-24 h-24 rounded-full bg-surface-container animate-shimmer" />
+            <div className="space-y-2">
+              <div className="w-36 h-7 rounded-full bg-surface-container animate-shimmer mx-auto" />
+              <div className="w-48 h-4 rounded-full bg-surface-container animate-shimmer mx-auto" />
+            </div>
+          </section>
+          {/* Stats skeleton */}
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-surface-container-lowest rounded-xl shadow-pudding p-4 flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+                <div className="w-12 h-5 rounded bg-surface-container animate-shimmer" />
+                <div className="w-16 h-3 rounded bg-surface-container animate-shimmer" />
+              </div>
+            ))}
+          </section>
+          {/* Recent activity skeleton */}
+          <section className="space-y-3">
+            <div className="w-28 h-4 rounded bg-surface-container animate-shimmer" />
+            <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-3">
+                  <div className="w-9 h-9 rounded-lg bg-surface-container animate-shimmer" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="w-32 h-4 rounded bg-surface-container animate-shimmer" />
+                    <div className="w-24 h-3 rounded bg-surface-container animate-shimmer" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+          {/* Achievements skeleton */}
+          <section className="space-y-3">
+            <div className="w-24 h-4 rounded bg-surface-container animate-shimmer" />
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5 p-3 rounded-xl">
+                  <div className="w-12 h-12 rounded-full bg-surface-container animate-shimmer" />
+                  <div className="w-14 h-3 rounded bg-surface-container animate-shimmer" />
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </main>
     );
 

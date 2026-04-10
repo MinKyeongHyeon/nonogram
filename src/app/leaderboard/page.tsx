@@ -118,8 +118,45 @@ export default function LeaderboardPage() {
 
   if (!mounted)
     return (
-      <main className="min-h-screen bg-surface">
-        <div className="h-16" />
+      <main className="min-h-screen bg-surface text-on-surface font-body pb-32 md:pb-12">
+        {/* Header skeleton */}
+        <header className="w-full bg-surface/70 backdrop-blur-xl shadow-pudding sticky top-0 z-50">
+          <div className="flex items-center gap-3 px-4 md:px-8 h-16 max-w-3xl mx-auto">
+            <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+            <div className="w-28 h-6 rounded-full bg-surface-container animate-shimmer" />
+          </div>
+        </header>
+        <div className="max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-8">
+          {/* Tabs skeleton */}
+          <div className="flex bg-surface-container-lowest rounded-full p-1 shadow-pudding">
+            <div className="flex-1 h-10 rounded-full bg-surface-container animate-shimmer" />
+            <div className="flex-1 h-10 rounded-full bg-surface-container animate-shimmer ml-1" />
+          </div>
+          {/* Podium skeleton */}
+          <section className="flex items-end justify-center gap-3 pt-8">
+            {["h-24", "h-32", "h-20"].map((h, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
+                <div className="w-14 h-14 rounded-full bg-surface-container animate-shimmer" />
+                <div className="w-16 h-3 rounded-full bg-surface-container animate-shimmer" />
+                <div className={`w-full ${h} rounded-t-xl bg-surface-container animate-shimmer`} />
+              </div>
+            ))}
+          </section>
+          {/* Rank list skeleton */}
+          <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-3">
+                <div className="w-8 h-4 rounded bg-surface-container animate-shimmer" />
+                <div className="w-9 h-9 rounded-full bg-surface-container animate-shimmer" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="w-24 h-4 rounded bg-surface-container animate-shimmer" />
+                  <div className="w-32 h-3 rounded bg-surface-container animate-shimmer" />
+                </div>
+                <div className="w-12 h-4 rounded bg-surface-container animate-shimmer" />
+              </div>
+            ))}
+          </div>
+        </div>
       </main>
     );
 

@@ -28,8 +28,47 @@ export default function SettingsPage() {
 
   if (!mounted) {
     return (
-      <main className="min-h-screen bg-surface">
-        <div className="h-16 bg-surface" />
+      <main className="min-h-screen bg-surface text-on-surface font-body pb-32 md:pb-12">
+        {/* Header skeleton */}
+        <header className="w-full bg-surface/70 backdrop-blur-xl shadow-pudding sticky top-0 z-50">
+          <div className="flex items-center gap-3 px-4 md:px-8 h-16 max-w-3xl mx-auto">
+            <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+            <div className="w-20 h-6 rounded-full bg-surface-container animate-shimmer" />
+          </div>
+        </header>
+        <div className="max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-8">
+          {/* Preferences skeleton */}
+          <section className="space-y-1">
+            <div className="w-24 h-4 rounded bg-surface-container animate-shimmer mb-3" />
+            <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="w-28 h-4 rounded bg-surface-container animate-shimmer" />
+                    <div className="w-40 h-3 rounded bg-surface-container animate-shimmer" />
+                  </div>
+                  <div className="w-12 h-7 rounded-full bg-surface-container animate-shimmer" />
+                </div>
+              ))}
+            </div>
+          </section>
+          {/* Account skeleton */}
+          <section className="space-y-1">
+            <div className="w-20 h-4 rounded bg-surface-container animate-shimmer mb-3" />
+            <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="w-24 h-4 rounded bg-surface-container animate-shimmer" />
+                    <div className="w-36 h-3 rounded bg-surface-container animate-shimmer" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </main>
     );
   }
