@@ -67,7 +67,11 @@ export default function CalendarPage() {
             </div>
             <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: 35 }).map((_, i) => (
-                <div key={i} className="aspect-square rounded-lg bg-surface-container animate-shimmer" style={{ animationDelay: `${(i % 7) * 0.05}s` }} />
+                <div
+                  key={i}
+                  className="aspect-square rounded-lg bg-surface-container animate-shimmer"
+                  style={{ animationDelay: `${(i % 7) * 0.05}s` }}
+                />
               ))}
             </div>
           </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,22 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
   const hapticsOn = useSettingsStore((s) => s.haptics);
 
   const [mounted, setMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   useEffect(() => setMounted(true), []);
+
+  // Track container width for responsive cell sizing
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(containerRef.current);
+    setContainerWidth(containerRef.current.clientWidth);
+    return () => observer.disconnect();
+  }, [mounted]);
 
   // Track line completions for sound/haptic feedback
   const checkLineCompletion = useCallback(
@@ -139,21 +154,34 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
     return cells;
   };
 
-  // Cell size based on grid dimensions
+  // Cell size: responsive based on container width
   const maxDim = Math.max(currentPuzzle.rows, currentPuzzle.cols);
-  const cellSize = maxDim >= 10 ? 36 : maxDim >= 8 ? 44 : maxDim >= 6 ? 48 : 56;
-  const gapSize = 4; // gap-1, 4px
-  const gridPadding = "2rem"; // padding inside cell grid area
+  const idealCellSize = maxDim >= 10 ? 36 : maxDim >= 8 ? 44 : maxDim >= 6 ? 48 : 56;
+  const gapSize = 4;
+  const gridPaddingPx = 32; // 2rem = 32px
 
-  // Clue area sizing: enough room for the longest clue set + extra breathing space
+  // Clue area sizing
   const maxRowClueLen = Math.max(...currentPuzzle.clues.rows.map((r) => r.length), 1);
   const maxColClueLen = Math.max(...currentPuzzle.clues.cols.map((c) => c.length), 1);
-  const rowClueWidth = maxRowClueLen * 24 + 32; // ~24px per number + 32px padding
-  const colClueHeight = maxColClueLen * 24 + 48; // ~24px per number + 48px breathing room
+  const idealRowClueWidth = maxRowClueLen * 24 + 32;
+  const colClueHeight = maxColClueLen * 24 + 48;
+
+  // Fit cell size to available width
+  const containerPadding = 48; // p-6 = 24px * 2
+  const availableForGrid = containerWidth - idealRowClueWidth - containerPadding;
+  const maxCellFromWidth =
+    availableForGrid > 0
+      ? Math.floor((availableForGrid - gridPaddingPx * 2 - gapSize * (currentPuzzle.cols - 1)) / currentPuzzle.cols)
+      : idealCellSize;
+  const cellSize = Math.max(24, Math.min(idealCellSize, maxCellFromWidth));
+  const rowClueWidth = Math.min(idealRowClueWidth, maxRowClueLen * (cellSize < 36 ? 18 : 24) + 24);
+  const clueFontClass = cellSize < 32 ? "text-[10px]" : cellSize < 40 ? "text-xs" : "text-sm sm:text-lg";
+
+  const gridPadding = `${gridPaddingPx}px`;
 
   return (
-    <div className="select-none touch-none">
-      <div className="relative bg-white/40 backdrop-blur-md rounded-xl p-6 sm:p-8 shadow-[0px_40px_80px_rgba(70,34,62,0.08)]">
+    <div ref={containerRef} className="select-none touch-none w-full max-w-full">
+      <div className="relative bg-white/40 backdrop-blur-md rounded-xl p-4 sm:p-6 md:p-8 shadow-[0px_40px_80px_rgba(70,34,62,0.08)] overflow-x-auto">
         <div
           className="grid"
           style={{
@@ -177,7 +205,7 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
                     <span
                       key={idx}
                       className={cn(
-                        "font-headline font-extrabold text-sm sm:text-lg leading-tight transition-all duration-300",
+                        `font-headline font-extrabold ${clueFontClass} leading-tight transition-all duration-300`,
                         matchedIndices.has(idx)
                           ? "text-outline-variant opacity-40 line-through"
                           : "text-on-surface-variant",
@@ -204,7 +232,7 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
                     <span
                       key={idx}
                       className={cn(
-                        "font-headline font-extrabold text-sm sm:text-lg transition-all duration-300",
+                        `font-headline font-extrabold ${clueFontClass} transition-all duration-300`,
                         matchedIndices.has(idx)
                           ? "text-outline-variant opacity-40 line-through"
                           : "text-on-surface-variant",

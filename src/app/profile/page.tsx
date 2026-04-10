@@ -89,7 +89,10 @@ export default function ProfilePage() {
           {/* Stats skeleton */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-surface-container-lowest rounded-xl shadow-pudding p-4 flex flex-col items-center gap-2">
+              <div
+                key={i}
+                className="bg-surface-container-lowest rounded-xl shadow-pudding p-4 flex flex-col items-center gap-2"
+              >
                 <div className="w-10 h-10 rounded-full bg-surface-container animate-shimmer" />
                 <div className="w-12 h-5 rounded bg-surface-container animate-shimmer" />
                 <div className="w-16 h-3 rounded bg-surface-container animate-shimmer" />

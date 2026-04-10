@@ -300,10 +300,7 @@ export default function AdminEditorPage() {
                     : "bg-error-container text-on-error-container"
                 }`}
               >
-                <span
-                  className="material-symbols-outlined text-base"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
+                <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
                   {validation.valid ? "check_circle" : "error"}
                 </span>
                 {validation.valid ? "Solvable by logic alone!" : validation.reason}

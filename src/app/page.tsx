@@ -75,7 +75,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-12 space-y-16">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-12 pb-[80px] space-y-16">
         {/* Hero Section */}
         <section className="grid grid-cols-1 md:grid-cols-2 items-center gap-12">
           <div className="space-y-8">
