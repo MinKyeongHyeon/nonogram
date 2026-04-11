@@ -10,28 +10,22 @@ function CallbackContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // supabaseClient의 detectSessionInUrl: true 설정이
-    // URL의 code를 자동으로 감지해 PKCE 교환을 처리함
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        const returnTo = searchParams.get("returnTo") ?? "/";
-        // 안전한 내부 경로만 허용
-        const safe = returnTo.startsWith("/") ? returnTo : "/";
-        router.replace(safe);
-      } else {
-        // 세션이 없으면 잠시 기다렸다가 재시도 (교환 중일 수 있음)
-        const timer = setTimeout(async () => {
-          const { data: retryData } = await supabase.auth.getSession();
-          const returnTo = searchParams.get("returnTo") ?? "/";
-          const safe = returnTo.startsWith("/") ? returnTo : "/";
-          if (retryData.session) {
-            router.replace(safe);
-          } else {
-            router.replace("/login?error=auth_failed");
-          }
-        }, 1500);
-        return () => clearTimeout(timer);
+    const code = new URL(window.location.href).searchParams.get("code");
+    const returnTo = searchParams.get("returnTo") ?? "/";
+    const safe = returnTo.startsWith("/") ? returnTo : "/";
+
+    if (!code) {
+      router.replace("/login?error=missing_code");
+      return;
+    }
+
+    supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+      if (error || !data.session) {
+        console.error("[auth/callback] exchange error:", error?.message);
+        router.replace("/login?error=auth_failed");
+        return;
       }
+      router.replace(safe);
     });
   }, [router, searchParams]);
 
