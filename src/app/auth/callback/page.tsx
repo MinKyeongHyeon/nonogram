@@ -10,23 +10,36 @@ function CallbackContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const code = new URL(window.location.href).searchParams.get("code");
     const returnTo = searchParams.get("returnTo") ?? "/";
     const safe = returnTo.startsWith("/") ? returnTo : "/";
 
-    if (!code) {
-      router.replace("/login?error=missing_code");
-      return;
-    }
-
-    supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
-      if (error || !data.session) {
-        console.error("[auth/callback] exchange error:", error?.message);
-        router.replace("/login?error=auth_failed");
-        return;
+    // detectSessionInUrl: true 가 code 교환을 자동 처리함
+    // → 교환 완료 시 SIGNED_IN 이벤트 발생 → 리다이렉트
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        subscription.unsubscribe();
+        router.replace(safe);
       }
-      router.replace(safe);
     });
+
+    // 이미 세션이 있는 경우 (뒤로가기 등)
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        subscription.unsubscribe();
+        router.replace(safe);
+      }
+    });
+
+    // 5초 내 SIGNED_IN 없으면 실패 처리
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe();
+      router.replace("/login?error=auth_failed");
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router, searchParams]);
 
   return (
