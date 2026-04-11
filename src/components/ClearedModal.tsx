@@ -4,6 +4,8 @@ import React, { useEffect, useRef } from "react";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useProgressStore } from "@/store/useProgressStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { supabase } from "@/lib/supabaseClient";
 import { playClear, haptic } from "@/lib/sound";
 import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
@@ -19,6 +21,7 @@ export default function ClearedModal() {
   const hapticsOn = useSettingsStore((s) => s.haptics);
   const recordClear = useProgressStore((s) => s.recordClear);
   const completeDailyChallenge = useProgressStore((s) => s.completeDailyChallenge);
+  const session = useAuthStore((s) => s.session);
   const recorded = useRef(false);
 
   useEffect(() => {
@@ -37,8 +40,30 @@ export default function ClearedModal() {
       if (currentPuzzle.id === getDailyPuzzleId(today)) {
         completeDailyChallenge(today);
       }
+
+      // 로그인 상태면 서버에도 기록 저장
+      if (session) {
+        const stars = timer < 60 ? 3 : timer < 180 ? 2 : 1;
+        supabase.auth.getSession().then(({ data }) => {
+          if (!data.session) return;
+          fetch("/api/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${data.session.access_token}`,
+            },
+            body: JSON.stringify({
+              puzzle_id: String(currentPuzzle.id),
+              time_sec: timer,
+              stars,
+            }),
+          }).catch(() => {
+            // 서버 저장 실패 시 로컬 기록은 이미 저장됨 — 무시
+          });
+        });
+      }
     }
-  }, [currentPuzzle, timer, recordClear, completeDailyChallenge]);
+  }, [currentPuzzle, timer, recordClear, completeDailyChallenge, session]);
 
   const formatTimer = (s: number) => {
     const mins = Math.floor(s / 60);

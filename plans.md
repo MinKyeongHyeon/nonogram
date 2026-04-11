@@ -177,24 +177,142 @@
 
 ---
 
-## Phase 5: 백엔드 & 인프라 (선택사항)
+## Phase 5: 백엔드 & 인프라
 
-> 🔴 **사용자 판단 필요**: 아래 항목은 서버/DB가 필요한 기능입니다.
-> 현재 프로젝트를 로컬 전용(localStorage)으로 유지할지, 서버를 도입할지 결정 필요.
+> **확정된 방향**
+>
+> - 스택: **Supabase** (Auth + PostgreSQL) + **Toss Payments** + **Vercel** (이미 배포됨)
+> - 인증: 카카오/네이버 OAuth (Supabase Auth)
+> - 비로그인 사용자: localStorage 전용으로 플레이 가능, 로그인 후 새로 시작 (기록 마이그레이션 없음)
+> - 보일러플레이트 레포 `MinKyeongHyeon/boilerPlates`의 인프라 코드를 이식
 
-- [ ] **인증 시스템**
-  - 🔴 **사용자 결정 필요**: 도입 여부 + 방식 (NextAuth / Supabase Auth / Firebase 등)
-  - 도입 시: 회원가입/로그인 페이지, 세션 관리, 프로필 연동
-- [ ] **실제 리더보드 백엔드**
-  - 🔴 **사용자 결정 필요**: 서버 선택 (Supabase / PlanetScale / Vercel KV 등)
-  - 현재 mock 데이터 → 실제 유저 랭킹 API
-  - 클리어 기록 서버 저장 + 랭킹 쿼리
-- [ ] **퍼즐 관리 API**
-  - Admin Editor에서 만든 퍼즐을 서버에 저장
-  - 퍼즐 목록 API (현재는 puzzle_library.ts 하드코딩)
-- [ ] **배포**
-  - 🟡 **사용자 확인 필요**: 배포 플랫폼 (Vercel / Netlify / self-hosted)
-  - 도메인 설정, 환경 변수 관리
+---
+
+### ⚙️ 5-1. 환경 셋업
+
+- [ ] `@supabase/supabase-js` 패키지 설치
+- [ ] `.env.local` 환경 변수 구성
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `NEXT_PUBLIC_TOSS_CLIENT_KEY`
+- [ ] Vercel Dashboard에 동일 환경 변수 등록
+- [ ] `lib/env.ts` — 보일러플레이트에서 이식
+- [ ] `lib/supabase-client.ts` — 보일러플레이트에서 이식
+
+---
+
+### 🗄️ 5-2. Supabase DB 스키마
+
+```sql
+-- 유저 프로필
+create table profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  nickname text,
+  avatar_url text,
+  created_at timestamptz default now()
+);
+
+-- 퍼즐 클리어 기록
+create table puzzle_completions (
+  id bigserial primary key,
+  user_id uuid references profiles(id) on delete cascade,
+  puzzle_id text not null,
+  time_sec int not null,
+  stars int not null,
+  completed_at timestamptz default now()
+);
+
+-- 퍼즐 관리 (Admin)
+create table puzzles (
+  id bigserial primary key,
+  title text not null,
+  difficulty text not null,
+  grid_data jsonb not null,
+  clues jsonb not null,
+  created_by uuid references profiles(id),
+  is_published boolean default false,
+  created_at timestamptz default now()
+);
+```
+
+- RLS 정책: `profiles` 본인만 UPDATE, `puzzle_completions` 본인만 INSERT/SELECT
+- `puzzles` 테이블: SELECT는 공개, INSERT/UPDATE는 admin 역할만
+
+---
+
+### 🔐 5-3. 인증 시스템 이식
+
+- [ ] `store/auth-store.ts` — 보일러플레이트에서 이식 (session, isLoading Zustand 스토어)
+- [ ] `components/AuthProvider.tsx` — 보일러플레이트 `auth-provider.tsx` 이식 (`layout.tsx`에 추가)
+- [ ] `components/ProtectedRoute.tsx` — 보일러플레이트 `protected-route.tsx` 이식
+  - 정책 동의 확인 로직 제거, 비로그인 시 `/login?returnTo=현재경로` 리다이렉트로 단순화
+- [ ] `app/auth/callback/route.ts` — OAuth 콜백 처리 (PKCE 코드 교환 → 세션 설정)
+- [ ] `middleware.ts` — 보일러플레이트 `proxy.ts` 기반 보안 헤더 + Rate Limit 이식
+  - CSP에 Supabase 도메인 추가
+  - 서버 측 보호 라우트(`/profile`, `/leaderboard`, `/admin/**`): 쿠키 없을 시 `/login?returnTo=...` 리다이렉트
+
+---
+
+### 🚪 5-4. 로그인 유도 페이지 (`/login`)
+
+- [ ] Pudding Puzzles 디자인 시스템 적용 (primary 컬러, 폰트)
+- [ ] 카카오 OAuth 버튼 (카카오 브랜드 색상)
+- [ ] 네이버 OAuth 버튼 (네이버 브랜드 색상)
+- [ ] 비로그인 안내 문구: "로그인 없이도 플레이할 수 있어요. 단, 기록은 이 기기에만 저장돼요."
+- [ ] 로그인 성공 후 `returnTo` 파라미터로 원래 페이지 복귀
+- [ ] 보호 라우트에서 진입 시 "계속하려면 로그인이 필요합니다" 컨텍스트 메시지 표시
+
+---
+
+### 🏆 5-5. 실제 리더보드 백엔드
+
+- [ ] `/api/leaderboard/route.ts` — `puzzle_completions` 기반 랭킹 쿼리
+  - `?tab=daily`: 오늘 날짜 completions, time_sec 오름차순
+  - `?tab=alltime`: 유저별 total stars 내림차순
+- [ ] `/api/completions/route.ts` — 클리어 시 POST (세션 필수, RLS로 본인만 INSERT)
+  - Rate Limit: IP당 분당 30회 (보일러플레이트 `proxy.ts` 활용)
+- [ ] `leaderboard/page.tsx` — mock 데이터 → 실제 API 교체
+- [ ] `ClearedModal.tsx` — 로그인 상태면 completions API 호출, 비로그인이면 로컬 스토어만 업데이트
+
+---
+
+### 🧩 5-6. 퍼즐 관리 API
+
+- [ ] `/api/puzzles/route.ts` — GET(공개 목록), POST(저장, admin only)
+- [ ] `app/admin/editor/page.tsx` — 저장 버튼 → Supabase `puzzles` 테이블 INSERT
+- [ ] `scripts/seedPuzzles.ts` — 기존 `puzzle_library.ts` 55개 퍼즐 → Supabase 마이그레이션 스크립트
+
+---
+
+### 👤 5-7. 프로필 연동
+
+- [ ] `profile/page.tsx` — 닉네임/아바타 Supabase `profiles` 테이블에서 로드
+- [ ] 닉네임 인라인 편집 (입력 필드 + 저장 버튼)
+- [ ] `settings/page.tsx` — Log Out 실제 연결 (`supabase.auth.signOut()` 후 `/` 이동)
+
+---
+
+### 💳 5-8. Toss Payments (Phase 6 검토)
+
+> 현재 퍼즐 앱에 결제가 필요한 기능이 없으므로 Phase 5 완료 후 수익화 방향 결정
+> 후보: 힌트 패키지 구매, 프리미엄 퍼즐 팩, 광고 제거 구독
+> 보일러플레이트의 `toss-payment-widget.tsx`, `lib/toss-server.ts` 등 재사용 가능
+
+---
+
+### Phase 5 실행 순서
+
+| 순서 | 항목              | 난이도 | 의존성                 |
+| ---- | ----------------- | ------ | ---------------------- |
+| 1    | 5-1 환경 셋업     | ★☆☆    | Supabase 프로젝트 생성 |
+| 2    | 5-2 DB 스키마     | ★☆☆    | 5-1                    |
+| 3    | 5-3 인증 이식     | ★★☆    | 5-1, 5-2               |
+| 4    | 5-4 /login 페이지 | ★★☆    | 5-3                    |
+| 5    | 5-5 리더보드 API  | ★★☆    | 5-3                    |
+| 6    | 5-6 퍼즐 관리 API | ★★☆    | 5-3                    |
+| 7    | 5-7 프로필 연동   | ★☆☆    | 5-3                    |
+| 8    | 5-8 토스페이먼츠  | ★★★    | 수익화 방향 결정 후    |
 
 ---
 

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -23,8 +26,17 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 
 export default function SettingsPage() {
   const { sound, haptics, darkMode, toggleSound, toggleHaptics, toggleDarkMode } = useSettingsStore();
+  const session = useAuthStore((s) => s.session);
   const [mounted, setMounted] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
   useEffect(() => setMounted(true), []);
+
+  async function handleLogOut() {
+    setIsLoggingOut(true);
+    await supabase.auth.signOut();
+    router.replace("/");
+  }
 
   if (!mounted) {
     return (
@@ -125,16 +137,24 @@ export default function SettingsPage() {
             <Link href="/profile">
               <SettingRow icon="person" label="Profile Details" description="View and edit your profile" chevron />
             </Link>
-            <SettingRow
-              icon="logout"
-              label="Log Out"
-              description="Sign out of your account"
-              trailing={
-                <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
-                  Coming Soon
-                </span>
-              }
-            />
+            {session ? (
+              <button onClick={handleLogOut} disabled={isLoggingOut} className="w-full text-left disabled:opacity-60">
+                <SettingRow
+                  icon="logout"
+                  label="Log Out"
+                  description={session.user.email ?? session.user.id}
+                  trailing={
+                    isLoggingOut ? (
+                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : undefined
+                  }
+                />
+              </button>
+            ) : (
+              <Link href="/login">
+                <SettingRow icon="login" label="Log In" description="Sign in to sync your progress" chevron />
+              </Link>
+            )}
           </div>
         </section>
 

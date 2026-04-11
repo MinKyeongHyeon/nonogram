@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useProgressStore } from "@/store/useProgressStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
 
@@ -64,8 +65,16 @@ const achievements: { id: string; icon: string; label: string; desc: string; che
 
 export default function ProfilePage() {
   const { getTotalCleared, getTotalStars, streak, records } = useProgressStore();
+  const session = useAuthStore((s) => s.session);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // 세션에서 닉네임 추출 (카카오/네이버 OAuth는 user_metadata.name 또는 full_name)
+  const nickname =
+    session?.user?.user_metadata?.name ??
+    session?.user?.user_metadata?.full_name ??
+    session?.user?.email?.split("@")[0] ??
+    "Puzzle Lover";
 
   if (!mounted)
     return (
@@ -166,7 +175,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-headline font-extrabold">Puzzle Lover</h2>
+            <h2 className="text-2xl font-headline font-extrabold">{nickname}</h2>
             <p className="text-on-surface-variant text-sm">
               Level {Math.floor(totalCleared / 3) + 1} • {totalCleared} puzzles cleared
             </p>
