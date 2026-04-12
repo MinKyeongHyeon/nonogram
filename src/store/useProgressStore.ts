@@ -19,6 +19,8 @@ interface ProgressState {
   getBestRecord: (puzzleId: number) => ClearRecord | undefined;
   getTotalStars: () => number;
   getTotalCleared: () => number;
+  /** 서버에서 가져온 records를 로컬과 병합 (각 퍼즐별 최고 기록 유지) */
+  mergeRecords: (incoming: ClearRecord[]) => void;
 }
 
 function calcStars(time: number): number {
@@ -91,6 +93,25 @@ export const useProgressStore = create<ProgressState>()(
 
       getTotalCleared: () => {
         return get().records.length;
+      },
+
+      mergeRecords: (incoming) => {
+        set((s) => {
+          const merged = [...s.records];
+          for (const inc of incoming) {
+            const idx = merged.findIndex((r) => r.puzzleId === inc.puzzleId);
+            if (idx === -1) {
+              merged.push(inc);
+            } else {
+              // 더 높은 stars, 같은 stars면 더 짧은 시간 우선
+              const cur = merged[idx];
+              if (inc.stars > cur.stars || (inc.stars === cur.stars && inc.time < cur.time)) {
+                merged[idx] = inc;
+              }
+            }
+          }
+          return { records: merged };
+        });
       },
     }),
     { name: "pudding-progress" },
