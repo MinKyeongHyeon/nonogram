@@ -9,7 +9,10 @@ export default function AdminPage() {
           href="/admin/editor"
           className="flex flex-col items-center gap-4 p-8 bg-surface-container-lowest rounded-2xl shadow-pudding border border-outline-variant/10 hover:-translate-y-1 transition-all"
         >
-          <span className="material-symbols-outlined text-5xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+          <span
+            className="material-symbols-outlined text-5xl text-primary"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
             edit_square
           </span>
           <span className="text-xl font-headline font-bold">Puzzle Editor</span>
@@ -19,7 +22,10 @@ export default function AdminPage() {
           href="/admin/packages"
           className="flex flex-col items-center gap-4 p-8 bg-surface-container-lowest rounded-2xl shadow-pudding border border-outline-variant/10 hover:-translate-y-1 transition-all"
         >
-          <span className="material-symbols-outlined text-5xl text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
+          <span
+            className="material-symbols-outlined text-5xl text-secondary"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
             inventory_2
           </span>
           <span className="text-xl font-headline font-bold">Manage Packages</span>

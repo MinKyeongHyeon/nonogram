@@ -6,10 +6,25 @@ import { StarsWon, PackProgress } from "@/components/HomeStats";
 import type { PackageSummary } from "@/types/puzzle";
 
 const DIFF_META: Record<string, { color: string; textColor: string; barColor: string; icon: string }> = {
-  easy:   { color: "bg-tertiary-container",  textColor: "text-tertiary",  barColor: "bg-tertiary-container",  icon: "sunny" },
-  medium: { color: "bg-secondary-container", textColor: "text-secondary", barColor: "bg-secondary-container", icon: "local_cafe" },
-  hard:   { color: "bg-primary-container",   textColor: "text-primary",   barColor: "bg-primary-container",   icon: "bolt" },
-  mixed:  { color: "bg-surface-container",   textColor: "text-on-surface",barColor: "bg-primary-container",   icon: "extension" },
+  easy: {
+    color: "bg-tertiary-container",
+    textColor: "text-tertiary",
+    barColor: "bg-tertiary-container",
+    icon: "sunny",
+  },
+  medium: {
+    color: "bg-secondary-container",
+    textColor: "text-secondary",
+    barColor: "bg-secondary-container",
+    icon: "local_cafe",
+  },
+  hard: { color: "bg-primary-container", textColor: "text-primary", barColor: "bg-primary-container", icon: "bolt" },
+  mixed: {
+    color: "bg-surface-container",
+    textColor: "text-on-surface",
+    barColor: "bg-primary-container",
+    icon: "extension",
+  },
 };
 
 export default function Home() {
@@ -38,13 +53,22 @@ export default function Home() {
         <div className="flex justify-between items-center px-6 md:px-12 py-4 max-w-[1440px] mx-auto">
           <span className="text-2xl font-headline font-black italic text-primary">Pudding Puzzles</span>
           <div className="hidden md:flex gap-10">
-            <Link href="/" className="text-primary font-headline font-bold border-b-4 border-primary-container pb-1 text-base tracking-tight">
+            <Link
+              href="/"
+              className="text-primary font-headline font-bold border-b-4 border-primary-container pb-1 text-base tracking-tight"
+            >
               Games
             </Link>
-            <Link href="/calendar" className="text-on-surface-variant font-headline font-medium text-base tracking-tight hover:text-primary transition-colors">
+            <Link
+              href="/calendar"
+              className="text-on-surface-variant font-headline font-medium text-base tracking-tight hover:text-primary transition-colors"
+            >
               Daily Challenge
             </Link>
-            <Link href="/leaderboard" className="text-on-surface-variant font-headline font-medium text-base tracking-tight hover:text-primary transition-colors">
+            <Link
+              href="/leaderboard"
+              className="text-on-surface-variant font-headline font-medium text-base tracking-tight hover:text-primary transition-colors"
+            >
               Leaderboard
             </Link>
           </div>
@@ -52,7 +76,10 @@ export default function Home() {
             <Link href="/settings" className="text-primary hover:opacity-80 transition-opacity">
               <span className="material-symbols-outlined">settings</span>
             </Link>
-            <Link href="/profile" className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+            <Link
+              href="/profile"
+              className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center"
+            >
               <span className="material-symbols-outlined text-on-primary-container">person</span>
             </Link>
           </div>
@@ -64,7 +91,9 @@ export default function Home() {
         <section className="grid grid-cols-1 md:grid-cols-2 items-center gap-12">
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-dim text-primary rounded-full -rotate-2 font-bold text-sm shadow-sm">
-              <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+              <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                local_fire_department
+              </span>
               Hot!
             </div>
             <h1 className="text-5xl md:text-6xl font-headline font-extrabold leading-tight tracking-tighter">
@@ -95,7 +124,10 @@ export default function Home() {
                   [0, 0, 1, 0, 0],
                 ].map((row, r) =>
                   row.map((cell, c) => (
-                    <div key={`${r}-${c}`} className={`w-10 h-10 rounded-md ${cell ? "bg-primary-container shadow-sm" : "bg-surface-container-lowest"}`} />
+                    <div
+                      key={`${r}-${c}`}
+                      className={`w-10 h-10 rounded-md ${cell ? "bg-primary-container shadow-sm" : "bg-surface-container-lowest"}`}
+                    />
                   )),
                 )}
               </div>
@@ -107,7 +139,9 @@ export default function Home() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-surface-container-lowest p-5 rounded-xl shadow-pudding border border-outline-variant/10 flex items-center gap-4">
             <div className="w-12 h-12 bg-tertiary-container rounded-full flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>extension</span>
+              <span className="material-symbols-outlined text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                extension
+              </span>
             </div>
             <div>
               <p className="text-2xl font-headline font-extrabold text-on-surface">
@@ -118,10 +152,14 @@ export default function Home() {
           </div>
           <div className="bg-surface-container-lowest p-5 rounded-xl shadow-pudding border border-outline-variant/10 flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary-container rounded-full flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                star
+              </span>
             </div>
             <div>
-              <p className="text-2xl font-headline font-extrabold text-on-surface"><StarsWon /></p>
+              <p className="text-2xl font-headline font-extrabold text-on-surface">
+                <StarsWon />
+              </p>
               <p className="text-sm text-on-surface-variant">Stars Won</p>
             </div>
           </div>
@@ -130,7 +168,9 @@ export default function Home() {
             className="bg-gradient-to-br from-primary-container/60 to-secondary-container/60 p-5 rounded-xl shadow-pudding border border-outline-variant/10 flex items-center gap-4 hover:-translate-y-1 transition-all group"
           >
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>today</span>
+              <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                today
+              </span>
             </div>
             <div>
               <p className="text-lg font-headline font-bold text-on-surface">Daily Challenge</p>
@@ -150,7 +190,10 @@ export default function Home() {
           {loadingPacks ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-surface-container-lowest p-6 rounded-xl space-y-4 shadow-pudding border border-outline-variant/10">
+                <div
+                  key={i}
+                  className="bg-surface-container-lowest p-6 rounded-xl space-y-4 shadow-pudding border border-outline-variant/10"
+                >
                   <div className="aspect-video bg-surface-container rounded-lg animate-shimmer" />
                   <div className="w-32 h-6 rounded bg-surface-container animate-shimmer" />
                   <div className="w-20 h-4 rounded bg-surface-container animate-shimmer" />
@@ -198,8 +241,13 @@ export default function Home() {
 
       {/* Mobile Bottom Nav */}
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-surface-container-lowest/70 backdrop-blur-xl rounded-t-[3rem] shadow-pudding md:hidden">
-        <Link href="/" className="flex flex-col items-center bg-surface-container-high text-primary rounded-full px-5 py-2">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
+        <Link
+          href="/"
+          className="flex flex-col items-center bg-surface-container-high text-primary rounded-full px-5 py-2"
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+            home
+          </span>
           <span className="font-headline text-[10px] font-bold uppercase tracking-widest">Home</span>
         </Link>
         <Link href="/leaderboard" className="flex flex-col items-center text-on-surface-variant px-5 py-2">

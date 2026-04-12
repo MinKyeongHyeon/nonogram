@@ -43,7 +43,9 @@ export function PackProgress({ puzzleIds, barColor }: { puzzleIds: number[]; bar
     <>
       <div className="flex justify-between text-xs text-on-surface-variant">
         <span>Progress</span>
-        <span>{cleared}/{total}</span>
+        <span>
+          {cleared}/{total}
+        </span>
       </div>
       <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden">
         <div className={`h-full ${barColor} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useProgressStore } from "@/store/useProgressStore";
@@ -26,10 +25,6 @@ export default function ClearedModal() {
   const session = useAuthStore((s) => s.session);
   const showToast = useToast((s) => s.show);
   const recorded = useRef(false);
-  const router = useRouter();
-
-  const currentIndex = puzzles.findIndex((p) => p.id === currentPuzzle?.id);
-  const nextPuzzle = currentIndex !== -1 && currentIndex < puzzles.length - 1 ? puzzles[currentIndex + 1] : null;
 
   useEffect(() => {
     if (sound) playClear();
@@ -177,20 +172,20 @@ export default function ClearedModal() {
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
-          {nextPuzzle && (
-            <button
-              onClick={() => router.push(`/puzzle/${nextPuzzle.id}`)}
-              className="w-full bg-primary text-on-primary py-3.5 rounded-full font-headline font-bold shadow-soft-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              Next Puzzle →
-            </button>
-          )}
           <button
             onClick={reset}
-            className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors"
+            className="w-full bg-primary text-on-primary py-3.5 rounded-full font-headline font-bold shadow-soft-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             Play Again
           </button>
+          {currentPuzzle?.difficulty && (
+            <Link
+              href={`/pack/${currentPuzzle.difficulty}`}
+              className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors text-center"
+            >
+              Back to Package
+            </Link>
+          )}
           <Link
             href="/"
             className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors text-center"
