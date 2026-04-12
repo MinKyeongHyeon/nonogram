@@ -21,6 +21,7 @@ interface PackageOption {
   id: number;
   slug: string;
   title: string;
+  cover_emoji: string;
   price: number;
   is_published: boolean;
 }
