@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useProgressStore } from "@/store/useProgressStore";
-import { puzzles } from "@/data/puzzles";
+import { useEffect, useState, useCallback } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 
 interface LeaderEntry {
@@ -15,106 +14,84 @@ interface LeaderEntry {
   isMe: boolean;
 }
 
-// Generate mock leaderboard data + inject the real user
-function generateLeaderboard(
-  userCleared: number,
-  userStars: number,
-  userBestTime: number,
-  mode: "all" | "daily",
-): LeaderEntry[] {
-  const names = [
-    "PuzzleMaster",
-    "StarGazer",
-    "NonogramNinja",
-    "PixelPro",
-    "GridWizard",
-    "BrainStorm",
-    "LogicLion",
-    "PuddingFan",
-    "MintChoco",
-    "CosmicCat",
-    "NeonByte",
-    "SilkThread",
-    "CrystalEye",
-    "DawnBreak",
-    "FrostPetal",
-  ];
-  const avatars = ["🧩", "⭐", "🥷", "🎨", "🧙", "⚡", "🦁", "🍮", "🍫", "🐱", "💜", "🧵", "🔮", "🌅", "❄️"];
-
-  // For daily mode, use fewer participants with tighter time ranges
-  const count = mode === "daily" ? 8 : names.length;
-  const entries: LeaderEntry[] = names.slice(0, count).map((name, i) => ({
-    rank: 0,
-    name,
-    avatar: avatars[i],
-    cleared: mode === "daily" ? 1 : Math.max(1, Math.floor(Math.random() * puzzles.length)),
-    stars: mode === "daily" ? 1 + Math.floor(Math.random() * 3) : Math.floor(Math.random() * puzzles.length * 3),
-    bestTime: mode === "daily" ? 15 + Math.floor(Math.random() * 120) : 20 + Math.floor(Math.random() * 300),
-    isMe: false,
-  }));
-
-  // Only add user if they have data (for daily, need today's record)
-  if (mode === "daily") {
-    if (userBestTime > 0 && userBestTime < 999) {
-      entries.push({
-        rank: 0,
-        name: "You",
-        avatar: "🧑",
-        cleared: 1,
-        stars: userStars,
-        bestTime: userBestTime,
-        isMe: true,
-      });
-    }
-  } else {
-    entries.push({
-      rank: 0,
-      name: "You",
-      avatar: "🧑",
-      cleared: userCleared,
-      stars: userStars,
-      bestTime: userBestTime || 999,
-      isMe: true,
-    });
-  }
-
-  // Sort: daily by bestTime, all-time by stars then bestTime
-  if (mode === "daily") {
-    entries.sort((a, b) => a.bestTime - b.bestTime);
-  } else {
-    entries.sort((a, b) => b.stars - a.stars || a.bestTime - b.bestTime);
-  }
-  entries.forEach((e, i) => (e.rank = i + 1));
-
-  return entries;
-}
 
 export default function LeaderboardPage() {
-  const { getTotalCleared, getTotalStars, records } = useProgressStore();
+  const session = useAuthStore((s) => s.session);
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"all" | "daily">("all");
+  const [entries, setEntries] = useState<LeaderEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => setMounted(true), []);
 
-  const bestTime = useMemo(() => {
-    if (records.length === 0) return 0;
-    return Math.min(...records.map((r) => r.time));
-  }, [records]);
+  const fetchLeaderboard = useCallback(async (currentTab: "all" | "daily") => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/leaderboard?tab=${currentTab}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.message ?? "알 수 없는 오류");
 
-  // For daily tab, find today's record specifically
-  const todayRecord = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const hash = today.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    const dailyPuzzleId = puzzles[hash % puzzles.length].id;
-    return records.find((r) => r.puzzleId === dailyPuzzleId);
-  }, [records]);
+      // API 데이터 → LeaderEntry 변환
+      const raw = json.data as Array<{
+        user_id: string;
+        time_sec?: number;
+        stars: number;
+        profiles: { nickname: string | null; avatar_url: string | null } | null;
+      }>;
 
-  const entries = useMemo(() => {
-    if (!mounted) return [];
-    if (tab === "daily") {
-      return generateLeaderboard(todayRecord ? 1 : 0, todayRecord?.stars ?? 0, todayRecord?.time ?? 999, "daily");
+      // all-time: user_id별 stars 합산
+      if (currentTab === "all") {
+        const map = new Map<string, { stars: number; name: string; avatar: string }>();
+        for (const row of raw) {
+          const existing = map.get(row.user_id);
+          const name = row.profiles?.nickname ?? "익명";
+          const avatar = row.profiles?.avatar_url ?? "🧩";
+          if (existing) {
+            existing.stars += row.stars;
+          } else {
+            map.set(row.user_id, { stars: row.stars, name, avatar });
+          }
+        }
+        const sorted = [...map.entries()]
+          .sort((a, b) => b[1].stars - a[1].stars)
+          .map(([uid, v], i) => ({
+            rank: i + 1,
+            name: v.name,
+            avatar: v.avatar,
+            cleared: 0,
+            stars: v.stars,
+            bestTime: 999,
+            isMe: uid === session?.user?.id,
+          }));
+        setEntries(sorted);
+      } else {
+        // daily: time_sec 오름차순
+        const sorted = raw.map((row, i) => ({
+          rank: i + 1,
+          name: row.profiles?.nickname ?? "익명",
+          avatar: row.profiles?.avatar_url ?? "🧩",
+          cleared: 1,
+          stars: row.stars,
+          bestTime: row.time_sec ?? 999,
+          isMe: row.user_id === session?.user?.id,
+        }));
+        setEntries(sorted);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "알 수 없는 오류";
+      setError(msg);
+      setEntries([]);
+    } finally {
+      setIsLoading(false);
     }
-    return generateLeaderboard(getTotalCleared(), getTotalStars(), bestTime, "all");
-  }, [mounted, tab, getTotalCleared, getTotalStars, bestTime, todayRecord]);
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (mounted) fetchLeaderboard(tab);
+  }, [mounted, tab, fetchLeaderboard]);
 
   if (!mounted)
     return (
@@ -206,8 +183,54 @@ export default function LeaderboardPage() {
           </button>
         </div>
 
-        {/* Podium */}
-        <section className="flex items-end justify-center gap-3 pt-8">
+        {/* 비로그인 안내 배너 */}
+        {!session && (
+          <div className="flex items-center gap-3 bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-sm">
+            <span className="material-symbols-outlined text-primary text-xl">emoji_events</span>
+            <p className="flex-1 text-on-surface-variant">
+              랭킹에 등재되려면{" "}
+              <Link href="/login" className="text-primary font-semibold underline underline-offset-2">
+                로그인
+              </Link>
+              하세요.
+            </p>
+          </div>
+        )}
+
+        {/* 로딩 */}
+        {isLoading && (
+          <div className="flex flex-col items-center gap-4 py-16 text-on-surface-variant">
+            <span className="material-symbols-outlined text-4xl animate-spin">progress_activity</span>
+            <p className="text-sm">불러오는 중...</p>
+          </div>
+        )}
+
+        {/* 에러 */}
+        {!isLoading && error && (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <span className="material-symbols-outlined text-4xl text-error">wifi_off</span>
+            <p className="text-sm text-on-surface-variant">{error}</p>
+            <button
+              onClick={() => fetchLeaderboard(tab)}
+              className="mt-1 px-5 py-2 bg-primary text-on-primary rounded-full text-sm font-semibold"
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
+
+        {/* 빈 상태 */}
+        {!isLoading && !error && entries.length === 0 && (
+          <div className="flex flex-col items-center gap-3 py-16 text-center text-on-surface-variant">
+            <span className="material-symbols-outlined text-4xl">leaderboard</span>
+            <p className="text-sm">아직 랭킹 데이터가 없어요.</p>
+          </div>
+        )}
+
+        {/* Podium + Rank (로그인 데이터 있을 때) */}
+        {!isLoading && !error && entries.length > 0 && (
+          <>
+          <section className="flex items-end justify-center gap-3 pt-8">
           {podiumOrder.map((entry, i) => (
             <div key={entry.rank} className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
               <div className="relative">
@@ -282,6 +305,8 @@ export default function LeaderboardPage() {
             </div>
           ))}
         </div>
+          </>
+        )}
       </div>
     </main>
   );

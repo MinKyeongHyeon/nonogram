@@ -15,7 +15,9 @@ function CallbackContent() {
 
     // detectSessionInUrl: true 가 code 교환을 자동 처리함
     // → 교환 완료 시 SIGNED_IN 이벤트 발생 → 리다이렉트
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         subscription.unsubscribe();
         router.replace(safe);

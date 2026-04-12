@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useProgressStore } from "@/store/useProgressStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { supabase } from "@/lib/supabaseClient";
 import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
 
@@ -67,10 +68,25 @@ export default function ProfilePage() {
   const { getTotalCleared, getTotalStars, streak, records } = useProgressStore();
   const session = useAuthStore((s) => s.session);
   const [mounted, setMounted] = useState(false);
+  const [profileData, setProfileData] = useState<{ nickname: string | null; avatar_url: string | null } | null>(null);
+
   useEffect(() => setMounted(true), []);
 
-  // 세션에서 닉네임 추출 (카카오/네이버 OAuth는 user_metadata.name 또는 full_name)
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    supabase
+      .from("profiles")
+      .select("nickname, avatar_url")
+      .eq("id", session.user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setProfileData(data);
+      });
+  }, [session?.user?.id]);
+
+  // 닉네임 우선순위: profiles 테이블 > OAuth metadata > 이메일 앞부분
   const nickname =
+    profileData?.nickname ??
     session?.user?.user_metadata?.name ??
     session?.user?.user_metadata?.full_name ??
     session?.user?.email?.split("@")[0] ??

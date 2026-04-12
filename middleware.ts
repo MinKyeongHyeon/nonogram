@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// 로그인이 필요한 경로
-const PROTECTED_PATHS = ["/profile", "/leaderboard", "/admin"];
+// 로그인이 필요한 경로 (비로그인 유저는 /login으로 리다이렉트)
+const PROTECTED_PATHS = ["/profile", "/admin"];
 
 // Rate Limit 설정 (API 엔드포인트)
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
