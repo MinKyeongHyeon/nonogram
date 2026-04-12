@@ -28,6 +28,16 @@ interface EditState {
 
 const DIFFICULTIES = ["easy", "medium", "hard", "mixed"];
 
+const EMPTY_NEW: EditState & { slug: string } = {
+  slug: "",
+  title: "",
+  description: "",
+  cover_emoji: "🧩",
+  price: 0,
+  difficulty: "easy",
+  sort_order: 0,
+};
+
 export default function AdminPackagesPage() {
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +45,9 @@ export default function AdminPackagesPage() {
   const [editState, setEditState] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newState, setNewState] = useState<EditState & { slug: string }>(EMPTY_NEW);
+  const [creating, setCreating] = useState(false);
 
   const fetchPackages = async () => {
     setLoading(true);
@@ -55,7 +68,10 @@ export default function AdminPackagesPage() {
 
   const handleTogglePublish = async (pkg: PackageRow) => {
     const token = await getToken();
-    if (!token) { setError("로그인이 필요합니다."); return; }
+    if (!token) {
+      setError("로그인이 필요합니다.");
+      return;
+    }
     const res = await fetch(`/api/packages/${pkg.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -63,7 +79,7 @@ export default function AdminPackagesPage() {
     });
     const json = await res.json();
     if (json.ok) {
-      setPackages((prev) => prev.map((p) => p.id === pkg.id ? { ...p, is_published: !pkg.is_published } : p));
+      setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, is_published: !pkg.is_published } : p)));
     } else {
       setError(json.message);
     }
@@ -86,12 +102,41 @@ export default function AdminPackagesPage() {
     setEditState(null);
   };
 
+  const createPackage = async () => {
+    if (!newState.slug.trim() || !newState.title.trim()) {
+      setError("slug와 title은 필수입니다.");
+      return;
+    }
+    setCreating(true);
+    setError(null);
+    const token = await getToken();
+    if (!token) { setError("로그인이 필요합니다."); setCreating(false); return; }
+    const res = await fetch("/api/packages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(newState),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      await fetchPackages();
+      setShowNewForm(false);
+      setNewState(EMPTY_NEW);
+    } else {
+      setError(json.message);
+    }
+    setCreating(false);
+  };
+
   const saveEdit = async () => {
     if (!editingId || !editState) return;
     setSaving(true);
     setError(null);
     const token = await getToken();
-    if (!token) { setError("로그인이 필요합니다."); setSaving(false); return; }
+    if (!token) {
+      setError("로그인이 필요합니다.");
+      setSaving(false);
+      return;
+    }
     const res = await fetch(`/api/packages/${editingId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -116,15 +161,113 @@ export default function AdminPackagesPage() {
             <h1 className="text-3xl font-headline font-extrabold">Manage Packages</h1>
             <p className="text-sm text-on-surface-variant mt-1">Toggle visibility and edit package details</p>
           </div>
-          <Link href="/admin" className="text-sm text-on-surface-variant hover:text-primary transition-colors">
-            ← Admin Home
-          </Link>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => { setShowNewForm((v) => !v); setError(null); }}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-sm font-bold hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              New Package
+            </button>
+            <Link href="/admin" className="text-sm text-on-surface-variant hover:text-primary transition-colors">
+              ← Admin Home
+            </Link>
+          </div>
         </div>
+
+        {/* New Package Form */}
+        {showNewForm && (
+          <div className="bg-surface-container-lowest rounded-xl shadow-pudding border border-primary/30 p-6 space-y-4">
+            <h2 className="text-lg font-headline font-bold">New Package</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Slug <span className="text-error">*</span></label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
+                  placeholder="e.g. premium-hard"
+                  value={newState.slug}
+                  onChange={(e) => setNewState({ ...newState, slug: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Title <span className="text-error">*</span></label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
+                  placeholder="e.g. Premium Hard Pack"
+                  value={newState.title}
+                  onChange={(e) => setNewState({ ...newState, title: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Emoji</label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
+                  value={newState.cover_emoji}
+                  onChange={(e) => setNewState({ ...newState, cover_emoji: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Difficulty</label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
+                  value={newState.difficulty}
+                  onChange={(e) => setNewState({ ...newState, difficulty: e.target.value })}
+                >
+                  {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Price (₩)</label>
+                <input
+                  type="number" min={0}
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
+                  value={newState.price}
+                  onChange={(e) => setNewState({ ...newState, price: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Sort Order</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
+                  value={newState.sort_order}
+                  onChange={(e) => setNewState({ ...newState, sort_order: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Description</label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
+                  placeholder="Optional description"
+                  value={newState.description}
+                  onChange={(e) => setNewState({ ...newState, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setShowNewForm(false); setNewState(EMPTY_NEW); setError(null); }}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createPackage}
+                disabled={creating}
+                className="px-6 py-2 rounded-lg text-sm font-bold bg-primary text-on-primary disabled:opacity-50"
+              >
+                {creating ? "Creating…" : "Create"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="bg-error-container text-on-error-container px-4 py-3 rounded-xl text-sm">
             {error}
-            <button className="ml-4 underline" onClick={() => setError(null)}>닫기</button>
+            <button className="ml-4 underline" onClick={() => setError(null)}>
+              닫기
+            </button>
           </div>
         )}
 
@@ -138,13 +281,18 @@ export default function AdminPackagesPage() {
         ) : (
           <div className="space-y-4">
             {packages.map((pkg) => (
-              <div key={pkg.id} className="bg-surface-container-lowest rounded-xl shadow-pudding border border-outline-variant/10">
+              <div
+                key={pkg.id}
+                className="bg-surface-container-lowest rounded-xl shadow-pudding border border-outline-variant/10"
+              >
                 {editingId === pkg.id && editState ? (
                   /* Edit Form */
                   <div className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Title</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                          Title
+                        </label>
                         <input
                           className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                           value={editState.title}
@@ -152,7 +300,9 @@ export default function AdminPackagesPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Emoji</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                          Emoji
+                        </label>
                         <input
                           className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                           value={editState.cover_emoji}
@@ -160,17 +310,25 @@ export default function AdminPackagesPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Difficulty</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                          Difficulty
+                        </label>
                         <select
                           className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                           value={editState.difficulty}
                           onChange={(e) => setEditState({ ...editState, difficulty: e.target.value })}
                         >
-                          {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
+                          {DIFFICULTIES.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Price (₩)</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                          Price (₩)
+                        </label>
                         <input
                           type="number"
                           min={0}
@@ -180,7 +338,9 @@ export default function AdminPackagesPage() {
                         />
                       </div>
                       <div className="space-y-1 col-span-2">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Description</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                          Description
+                        </label>
                         <input
                           className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                           value={editState.description}
@@ -188,7 +348,9 @@ export default function AdminPackagesPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Sort Order</label>
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                          Sort Order
+                        </label>
                         <input
                           type="number"
                           className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
@@ -198,7 +360,10 @@ export default function AdminPackagesPage() {
                       </div>
                     </div>
                     <div className="flex gap-3 justify-end">
-                      <button onClick={cancelEdit} className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors">
+                      <button
+                        onClick={cancelEdit}
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
+                      >
                         Cancel
                       </button>
                       <button
@@ -217,12 +382,18 @@ export default function AdminPackagesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-headline font-bold">{pkg.title}</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant capitalize">{pkg.difficulty}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant capitalize">
+                          {pkg.difficulty}
+                        </span>
                         {pkg.price > 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary-container text-primary font-bold">₩{pkg.price.toLocaleString()}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary-container text-primary font-bold">
+                            ₩{pkg.price.toLocaleString()}
+                          </span>
                         )}
                       </div>
-                      <p className="text-sm text-on-surface-variant">{pkg.puzzle_count} puzzles · slug: {pkg.slug}</p>
+                      <p className="text-sm text-on-surface-variant">
+                        {pkg.puzzle_count} puzzles · slug: {pkg.slug}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <button
@@ -231,7 +402,10 @@ export default function AdminPackagesPage() {
                       >
                         {pkg.is_published ? "Published" : "Hidden"}
                       </button>
-                      <button onClick={() => startEdit(pkg)} className="p-2 rounded-lg hover:bg-surface-container transition-colors">
+                      <button
+                        onClick={() => startEdit(pkg)}
+                        className="p-2 rounded-lg hover:bg-surface-container transition-colors"
+                      >
                         <span className="material-symbols-outlined text-on-surface-variant">edit</span>
                       </button>
                     </div>
