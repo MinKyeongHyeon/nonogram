@@ -115,13 +115,25 @@ export default function AdminEditorPage() {
   const filledCount = grid.flat().filter((c) => c === 1).length;
 
   const saveToSupabase = async () => {
-    if (!title.trim()) { showToast("제목을 입력해주세요.", "error"); return; }
-    if (filledCount === 0) { showToast("퍼즐이 비어있어요.", "error"); return; }
-    if (!validation?.valid) { showToast("먼저 Validate를 통과해야 합니다.", "error"); return; }
+    if (!title.trim()) {
+      showToast("제목을 입력해주세요.", "error");
+      return;
+    }
+    if (filledCount === 0) {
+      showToast("퍼즐이 비어있어요.", "error");
+      return;
+    }
+    if (!validation?.valid) {
+      showToast("먼저 Validate를 통과해야 합니다.", "error");
+      return;
+    }
     setIsSaving(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) { showToast("로그인이 필요합니다.", "error"); return; }
+      if (!sessionData.session) {
+        showToast("로그인이 필요합니다.", "error");
+        return;
+      }
       const res = await fetch("/api/puzzles", {
         method: "POST",
         headers: {

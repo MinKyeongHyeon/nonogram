@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useProgressStore } from "@/store/useProgressStore";
@@ -25,6 +26,10 @@ export default function ClearedModal() {
   const session = useAuthStore((s) => s.session);
   const showToast = useToast((s) => s.show);
   const recorded = useRef(false);
+  const router = useRouter();
+
+  const currentIndex = puzzles.findIndex((p) => p.id === currentPuzzle?.id);
+  const nextPuzzle = currentIndex !== -1 && currentIndex < puzzles.length - 1 ? puzzles[currentIndex + 1] : null;
 
   useEffect(() => {
     if (sound) playClear();
@@ -59,11 +64,13 @@ export default function ClearedModal() {
               time_sec: timer,
               stars,
             }),
-          }).then(async (res) => {
-            if (!res.ok) showToast("기록 저장에 실패했어요. 로컬에는 저장됐어요.", "error");
-          }).catch(() => {
-            showToast("네트워크 오류로 기록 저장에 실패했어요.", "error");
-          });
+          })
+            .then(async (res) => {
+              if (!res.ok) showToast("기록 저장에 실패했어요. 로컬에는 저장됐어요.", "error");
+            })
+            .catch(() => {
+              showToast("네트워크 오류로 기록 저장에 실패했어요.", "error");
+            });
         });
       }
     }
@@ -110,6 +117,38 @@ export default function ClearedModal() {
           </span>
         </div>
 
+        {/* Cleared Puzzle Preview */}
+        {currentPuzzle && (
+          <div className="flex justify-center">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${currentPuzzle.cols}, 1fr)`,
+                width: 128,
+                height: 128,
+                gap: 2,
+                borderRadius: 8,
+                overflow: "hidden",
+                padding: 4,
+                background: "var(--color-surface-container-low, #f0eff4)",
+              }}
+            >
+              {currentPuzzle.solution.flatMap((row, rIdx) =>
+                row.map((cell, cIdx) => (
+                  <div
+                    key={`${rIdx}-${cIdx}`}
+                    style={{
+                      borderRadius: 2,
+                      backgroundColor:
+                        cell === 1 ? "var(--color-primary, #6a45b2)" : "var(--color-surface-container-lowest, #fdf8ff)",
+                    }}
+                  />
+                )),
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2">
           <h2 className="text-2xl font-headline font-extrabold text-on-surface">Puzzle Cleared!</h2>
           <p className="text-on-surface-variant">{currentPuzzle?.name ?? "Puzzle"} completed</p>
@@ -138,9 +177,17 @@ export default function ClearedModal() {
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
+          {nextPuzzle && (
+            <button
+              onClick={() => router.push(`/puzzle/${nextPuzzle.id}`)}
+              className="w-full bg-primary text-on-primary py-3.5 rounded-full font-headline font-bold shadow-soft-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              Next Puzzle →
+            </button>
+          )}
           <button
             onClick={reset}
-            className="w-full bg-primary text-on-primary py-3.5 rounded-full font-headline font-bold shadow-soft-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors"
           >
             Play Again
           </button>

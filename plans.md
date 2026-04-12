@@ -317,6 +317,7 @@ create table puzzles (
   → 유저 수 증가 시 50건 초과 데이터 누락, 순위 왜곡
 - **현재 상태**: API를 뷰 우선 조회(폴백: raw 500건)로 개선 완료 ✅
 - **Supabase SQL Editor에서 실행 필요**:
+
   ```sql
   create or replace view leaderboard_alltime as
   select

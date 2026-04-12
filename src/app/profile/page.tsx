@@ -257,7 +257,10 @@ export default function ProfilePage() {
                 <h2 className="text-2xl font-headline font-extrabold">{nickname}</h2>
                 {session && (
                   <button
-                    onClick={() => { setNickInput(nickname); setIsEditingNick(true); }}
+                    onClick={() => {
+                      setNickInput(nickname);
+                      setIsEditingNick(true);
+                    }}
                     className="text-on-surface-variant hover:text-primary transition-colors"
                     title="닉네임 변경"
                   >

@@ -61,9 +61,7 @@ export async function middleware(request: NextRequest) {
   // API Rate Limit
   if (pathname.startsWith("/api/")) {
     const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      request.headers.get("x-real-ip") ??
-      "unknown";
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? "unknown";
     const key = `${ip}:${pathname}`;
 
     let allowed = true;

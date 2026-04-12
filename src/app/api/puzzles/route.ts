@@ -58,14 +58,18 @@ export async function POST(request: NextRequest) {
   }
 
   const supabaseAdmin = getSupabaseAdmin();
-  const { data, error } = await supabaseAdmin.from("puzzles").insert({
-    title: (title as string).trim(),
-    difficulty,
-    grid_data,
-    clues,
-    created_by: user.id,
-    is_published: is_published === true,
-  }).select("id").single();
+  const { data, error } = await supabaseAdmin
+    .from("puzzles")
+    .insert({
+      title: (title as string).trim(),
+      difficulty,
+      grid_data,
+      clues,
+      created_by: user.id,
+      is_published: is_published === true,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     console.error("[puzzles] insert error:", error.message);

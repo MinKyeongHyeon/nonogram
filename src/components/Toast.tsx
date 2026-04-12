@@ -58,10 +58,7 @@ export default function ToastContainer() {
             {ICONS[t.type]}
           </span>
           <span>{t.message}</span>
-          <button
-            onClick={() => remove(t.id)}
-            className="ml-1 opacity-60 hover:opacity-100 transition-opacity"
-          >
+          <button onClick={() => remove(t.id)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity">
             <span className="material-symbols-outlined text-sm">close</span>
           </button>
         </div>

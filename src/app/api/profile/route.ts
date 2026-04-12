@@ -34,16 +34,10 @@ export async function PATCH(request: NextRequest) {
   const { nickname } = body as Record<string, unknown>;
 
   if (typeof nickname !== "string" || nickname.trim().length === 0 || nickname.trim().length > 20) {
-    return NextResponse.json(
-      { ok: false, message: "닉네임은 1~20자 사이여야 합니다." },
-      { status: 400 },
-    );
+    return NextResponse.json({ ok: false, message: "닉네임은 1~20자 사이여야 합니다." }, { status: 400 });
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ nickname: nickname.trim() })
-    .eq("id", user.id);
+  const { error } = await supabase.from("profiles").update({ nickname: nickname.trim() }).eq("id", user.id);
 
   if (error) {
     console.error("[profile] update error:", error.message);

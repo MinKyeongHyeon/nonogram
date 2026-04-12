@@ -79,6 +79,24 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
   const [containerWidth, setContainerWidth] = useState(0);
   useEffect(() => setMounted(true), []);
 
+  // Drag state
+  const dragRef = useRef<{
+    active: boolean;
+    action: "fill" | "mark-add" | "mark-remove" | null;
+    painted: Set<string>;
+  }>({ active: false, action: null, painted: new Set() });
+
+  // End drag on mouseup anywhere
+  useEffect(() => {
+    const onMouseUp = () => {
+      dragRef.current.active = false;
+      dragRef.current.action = null;
+      dragRef.current.painted.clear();
+    };
+    window.addEventListener("mouseup", onMouseUp);
+    return () => window.removeEventListener("mouseup", onMouseUp);
+  }, []);
+
   // Track container width for responsive cell sizing
   useEffect(() => {
     if (!containerRef.current) return;
@@ -138,6 +156,76 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
     },
     [grid, handleClick, sound, hapticsOn, checkLineCompletion],
   );
+
+  // Start drag on first cell
+  const startDrag = useCallback(
+    (rIdx: number, cIdx: number) => {
+      const cell = grid[rIdx][cIdx];
+      let action: "fill" | "mark-add" | "mark-remove" | null = null;
+      if (touchMode === "fill") {
+        if (cell === 0) action = "fill";
+      } else {
+        if (cell === 0) action = "mark-add";
+        else if (cell === -1) action = "mark-remove";
+      }
+      dragRef.current = { active: true, action, painted: new Set([`${rIdx}-${cIdx}`]) };
+      if (action) onCellClick(rIdx, cIdx, false, touchMode);
+    },
+    [grid, touchMode, onCellClick],
+  );
+
+  // Apply drag action to a cell during move
+  const applyDragToCell = useCallback(
+    (rIdx: number, cIdx: number) => {
+      const { active, action, painted } = dragRef.current;
+      if (!active || !action) return;
+      const key = `${rIdx}-${cIdx}`;
+      if (painted.has(key)) return;
+      painted.add(key);
+      const cell = grid[rIdx][cIdx];
+      if (action === "fill" && cell === 0) {
+        onCellClick(rIdx, cIdx, false, "fill");
+      } else if (action === "mark-add" && cell === 0) {
+        onCellClick(rIdx, cIdx, false, "mark");
+      } else if (action === "mark-remove" && cell === -1) {
+        onCellClick(rIdx, cIdx, false, "mark");
+      }
+    },
+    [grid, onCellClick],
+  );
+
+  // Touch handlers for the grid container
+  const getCellFromTouch = (touch: React.Touch) => {
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!el) return null;
+    const row = el.getAttribute("data-row");
+    const col = el.getAttribute("data-col");
+    if (row === null || col === null) return null;
+    return { rIdx: Number(row), cIdx: Number(col) };
+  };
+
+  const onGridTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const cell = getCellFromTouch(e.touches[0]);
+      if (cell) startDrag(cell.rIdx, cell.cIdx);
+    },
+    [startDrag],
+  );
+
+  const onGridTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      e.preventDefault();
+      const cell = getCellFromTouch(e.touches[0]);
+      if (cell) applyDragToCell(cell.rIdx, cell.cIdx);
+    },
+    [applyDragToCell],
+  );
+
+  const onGridTouchEnd = useCallback(() => {
+    dragRef.current.active = false;
+    dragRef.current.action = null;
+    dragRef.current.painted.clear();
+  }, []);
 
   if (!mounted || !currentPuzzle)
     return (
@@ -255,12 +343,21 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
               gap: gapSize,
               padding: gridPadding,
             }}
+            onTouchStart={onGridTouchStart}
+            onTouchMove={onGridTouchMove}
+            onTouchEnd={onGridTouchEnd}
           >
             {grid.flatMap((row, rIdx) =>
               row.map((cellState, cIdx) => (
                 <div
                   key={`${rIdx}-${cIdx}`}
-                  onClick={() => onCellClick(rIdx, cIdx, false, touchMode)}
+                  data-row={rIdx}
+                  data-col={cIdx}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    startDrag(rIdx, cIdx);
+                  }}
+                  onMouseEnter={() => applyDragToCell(rIdx, cIdx)}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     onCellClick(rIdx, cIdx, true);
