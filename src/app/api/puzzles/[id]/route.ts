@@ -3,28 +3,41 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 
-export async function GET() {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ ok: false, message: "잘못된 ID입니다." }, { status: 400 });
+  }
+
   const supabaseAdmin = getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from("puzzles")
-    .select("id, title, difficulty, created_at, is_published")
-    .order("created_at", { ascending: false });
+    .select("id, title, difficulty, grid_data, clues, is_published, created_at")
+    .eq("id", id)
+    .single();
 
-  if (error) {
-    return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json({ ok: false, message: "퍼즐을 찾을 수 없어요." }, { status: 404 });
   }
+
   return NextResponse.json({ ok: true, data });
 }
 
-export async function POST(request: NextRequest) {
-  // admin 권한 확인
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ ok: false, message: "잘못된 ID입니다." }, { status: 400 });
+  }
+
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
   if (!token) {
     return NextResponse.json({ ok: false, message: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
+  const supabaseClient = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     auth: { persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
@@ -32,7 +45,7 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser();
+  } = await supabaseClient.auth.getUser();
 
   if (authError || !user) {
     return NextResponse.json({ ok: false, message: "유효하지 않은 세션입니다." }, { status: 401 });
@@ -58,24 +71,22 @@ export async function POST(request: NextRequest) {
   }
 
   const supabaseAdmin = getSupabaseAdmin();
-  const { data, error } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("puzzles")
-    .insert({
+    .update({
       title: (title as string).trim(),
       difficulty,
       grid_data,
       clues,
       package_id: typeof package_id === "number" ? package_id : null,
-      created_by: user.id,
       is_published: is_published === true,
     })
-    .select("id")
-    .single();
+    .eq("id", id);
 
   if (error) {
-    console.error("[puzzles] insert error:", error.message);
-    return NextResponse.json({ ok: false, message: "퍼즐 저장에 실패했어요." }, { status: 500 });
+    console.error("[puzzles] update error:", error.message);
+    return NextResponse.json({ ok: false, message: "퍼즐 수정에 실패했어요." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, id: data.id }, { status: 201 });
+  return NextResponse.json({ ok: true });
 }

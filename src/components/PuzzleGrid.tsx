@@ -354,6 +354,7 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
                   data-row={rIdx}
                   data-col={cIdx}
                   onMouseDown={(e) => {
+                    if (e.button === 2) return; // 우클릭은 onContextMenu에서 처리
                     e.preventDefault();
                     startDrag(rIdx, cIdx);
                   }}

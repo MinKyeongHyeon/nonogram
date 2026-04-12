@@ -25,7 +25,12 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
 });
 
-function inferDifficulty(id: number, rows: number): "easy" | "medium" | "hard" {
+function inferDifficulty(name: string, rows: number): "easy" | "medium" | "hard" {
+  const lower = name.toLowerCase();
+  if (lower.startsWith("easy")) return "easy";
+  if (lower.startsWith("medium")) return "medium";
+  if (lower.startsWith("hard")) return "hard";
+  // fallback: size-based
   if (rows <= 5) return "easy";
   if (rows <= 7) return "medium";
   return "hard";
@@ -70,30 +75,45 @@ function generateClues(solution: number[][]): { rows: number[][]; cols: number[]
 async function seed() {
   console.log(`총 ${puzzleLibrary.length}개 퍼즐 시드 시작...`);
 
+  // packages 테이블에서 slug → id 매핑 조회
+  const { data: pkgs, error: pkgErr } = await supabase
+    .from("packages")
+    .select("id, slug, difficulty")
+    .in("slug", ["free-easy", "free-medium", "free-hard"]);
+
+  if (pkgErr || !pkgs?.length) {
+    console.error("packages 테이블 조회 실패 — migrate_packages.sql을 먼저 실행했는지 확인하세요.");
+    console.error(pkgErr?.message);
+    process.exit(1);
+  }
+
+  const pkgByDifficulty: Record<string, number> = {};
+  for (const p of pkgs) {
+    if (p.difficulty) pkgByDifficulty[p.difficulty] = p.id;
+  }
+
   let succeeded = 0;
   let failed = 0;
 
   for (const raw of puzzleLibrary) {
     const rows = raw.solution.length;
-    const difficulty = inferDifficulty(raw.id, rows);
+    const difficulty = inferDifficulty(raw.name, rows);
     const clues = generateClues(raw.solution);
 
-    const { error } = await supabase.from("puzzles").upsert(
-      {
-        title: raw.name,
-        difficulty,
-        grid_data: raw.solution,
-        clues,
-        is_published: true,
-      },
-      { onConflict: "title" },
-    );
+    const { error } = await supabase.from("puzzles").insert({
+      title: raw.name,
+      difficulty,
+      grid_data: raw.solution,
+      clues,
+      package_id: pkgByDifficulty[difficulty] ?? null,
+      is_published: true,
+    });
 
     if (error) {
       console.error(`❌ [${raw.name}] 실패:`, error.message);
       failed++;
     } else {
-      console.log(`✅ [${raw.name}] 저장 완료`);
+      console.log(`✅ [${raw.name}] 저장 완료 (${difficulty}, pkg: ${pkgByDifficulty[difficulty] ?? "none"})`);
       succeeded++;
     }
   }

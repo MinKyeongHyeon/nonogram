@@ -38,10 +38,29 @@ export async function fetchPuzzles(): Promise<Puzzle[]> {
 }
 
 export async function fetchPuzzleById(id: number): Promise<Puzzle | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const puzzle = puzzleLibrary.find((p) => p.id === id);
-      resolve(puzzle ? completePuzzle(puzzle) : null);
-    }, 500);
-  });
+  // Supabase 우선 조회
+  try {
+    const res = await fetch(`/api/puzzles/${id}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json.ok && json.data) {
+        const p = json.data;
+        return {
+          id: p.id,
+          name: p.title,
+          rows: (p.grid_data as number[][]).length,
+          cols: (p.grid_data as number[][])[0]?.length ?? 0,
+          difficulty: p.difficulty as Difficulty,
+          solution: p.grid_data as number[][],
+          clues: p.clues as { rows: number[][]; cols: number[][] },
+        };
+      }
+    }
+  } catch {
+    // Supabase 실패 시 로컬 폴백
+  }
+
+  // 로컬 폴백
+  const puzzle = puzzleLibrary.find((p) => p.id === id);
+  return puzzle ? completePuzzle(puzzle) : null;
 }
