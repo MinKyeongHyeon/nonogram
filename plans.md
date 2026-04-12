@@ -293,7 +293,66 @@ create table puzzles (
 
 ---
 
-### 💳 5-8. Toss Payments (Phase 6 검토)
+### � 5-9. 보안 강화 (Phase 5 완료 후 우선 처리)
+
+> Phase 5 구현 과정에서 확인된 보안/안정성 미흡 사항
+
+#### Rate Limit — 인메모리 버킷 한계
+
+- **문제**: `middleware.ts`의 Rate Limit이 `Map<string, Bucket>` 인메모리 구조  
+  → Vercel Serverless 환경에서 인스턴스 재시작 시 카운터 초기화됨  
+  → 실질적으로 우회 가능 (콜드 스타트마다 새 카운터)
+- **개선**: [Upstash Redis](https://upstash.com) + `@upstash/ratelimit` 패키지로 교체
+  ```ts
+  // 예시
+  import { Ratelimit } from "@upstash/ratelimit";
+  import { Redis } from "@upstash/redis";
+  const ratelimit = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(60, "1 m") });
+  ```
+- **환경변수 추가**: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+
+#### 리더보드 집계 — 클라이언트 사이드 집계 위험
+
+- **문제**: `/api/leaderboard?tab=all` 응답에서 raw completions 50건을 프론트에서 `user_id`별 stars 합산  
+  → 유저 수 증가 시 50건 초과 데이터 누락, 순위 왜곡
+- **현재 상태**: API를 뷰 우선 조회(폴백: raw 500건)로 개선 완료 ✅
+- **Supabase SQL Editor에서 실행 필요**:
+  ```sql
+  create or replace view leaderboard_alltime as
+  select
+    c.user_id,
+    sum(c.stars)::int            as total_stars,
+    count(*)::int                as cleared_count,
+    p.nickname,
+    p.avatar_url
+  from puzzle_completions c
+  join profiles p on c.user_id = p.id
+  group by c.user_id, p.nickname, p.avatar_url
+  order by total_stars desc;
+
+  -- 뷰에 대한 RLS (anon도 읽기 가능)
+  grant select on leaderboard_alltime to anon, authenticated;
+  ```
+
+#### ClearedModal 서버 저장 실패 — 조용한 실패
+
+- **문제**: 로그인 상태에서 `/api/completions` POST 실패 시 콘솔 에러만 출력, 유저에게 알림 없음
+- **개선**: 전역 토스트 컴포넌트 도입 → 저장 실패 시 "기록 저장에 실패했어요" 알림 표시
+
+#### 닉네임 편집 기능 미구현
+
+- **문제**: `profiles` 테이블 조회는 됐지만 닉네임 변경 UI 없음
+- **개선**: `profile/page.tsx`에 인라인 편집 (입력 필드 + 저장 버튼) + `/api/profile` PATCH 엔드포인트
+
+#### CSP `script-src 'unsafe-inline'` 완화 필요
+
+- **문제**: `middleware.ts` CSP에 `'unsafe-inline'` 허용 — XSS 벡터 존재
+- **개선**: Nonce 기반 CSP (`crypto.randomUUID()` per request) 또는 `'strict-dynamic'` 검토  
+  Next.js 15의 `experimental.cspHeader` 옵션 활용 가능
+
+---
+
+### �💳 5-8. Toss Payments (Phase 6 검토)
 
 > 현재 퍼즐 앱에 결제가 필요한 기능이 없으므로 Phase 5 완료 후 수익화 방향 결정
 > 후보: 힌트 패키지 구매, 프리미엄 퍼즐 팩, 광고 제거 구독

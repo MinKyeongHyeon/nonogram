@@ -14,7 +14,6 @@ interface LeaderEntry {
   isMe: boolean;
 }
 
-
 export default function LeaderboardPage() {
   const session = useAuthStore((s) => s.session);
   const [mounted, setMounted] = useState(false);
@@ -25,69 +24,72 @@ export default function LeaderboardPage() {
 
   useEffect(() => setMounted(true), []);
 
-  const fetchLeaderboard = useCallback(async (currentTab: "all" | "daily") => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/leaderboard?tab=${currentTab}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.message ?? "알 수 없는 오류");
+  const fetchLeaderboard = useCallback(
+    async (currentTab: "all" | "daily") => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/leaderboard?tab=${currentTab}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.message ?? "알 수 없는 오류");
 
-      // API 데이터 → LeaderEntry 변환
-      const raw = json.data as Array<{
-        user_id: string;
-        time_sec?: number;
-        stars: number;
-        profiles: { nickname: string | null; avatar_url: string | null } | null;
-      }>;
+        // API 데이터 → LeaderEntry 변환
+        const raw = json.data as Array<{
+          user_id: string;
+          time_sec?: number;
+          stars: number;
+          profiles: { nickname: string | null; avatar_url: string | null } | null;
+        }>;
 
-      // all-time: user_id별 stars 합산
-      if (currentTab === "all") {
-        const map = new Map<string, { stars: number; name: string; avatar: string }>();
-        for (const row of raw) {
-          const existing = map.get(row.user_id);
-          const name = row.profiles?.nickname ?? "익명";
-          const avatar = row.profiles?.avatar_url ?? "🧩";
-          if (existing) {
-            existing.stars += row.stars;
-          } else {
-            map.set(row.user_id, { stars: row.stars, name, avatar });
+        // all-time: user_id별 stars 합산
+        if (currentTab === "all") {
+          const map = new Map<string, { stars: number; name: string; avatar: string }>();
+          for (const row of raw) {
+            const existing = map.get(row.user_id);
+            const name = row.profiles?.nickname ?? "익명";
+            const avatar = row.profiles?.avatar_url ?? "🧩";
+            if (existing) {
+              existing.stars += row.stars;
+            } else {
+              map.set(row.user_id, { stars: row.stars, name, avatar });
+            }
           }
-        }
-        const sorted = [...map.entries()]
-          .sort((a, b) => b[1].stars - a[1].stars)
-          .map(([uid, v], i) => ({
+          const sorted = [...map.entries()]
+            .sort((a, b) => b[1].stars - a[1].stars)
+            .map(([uid, v], i) => ({
+              rank: i + 1,
+              name: v.name,
+              avatar: v.avatar,
+              cleared: 0,
+              stars: v.stars,
+              bestTime: 999,
+              isMe: uid === session?.user?.id,
+            }));
+          setEntries(sorted);
+        } else {
+          // daily: time_sec 오름차순
+          const sorted = raw.map((row, i) => ({
             rank: i + 1,
-            name: v.name,
-            avatar: v.avatar,
-            cleared: 0,
-            stars: v.stars,
-            bestTime: 999,
-            isMe: uid === session?.user?.id,
+            name: row.profiles?.nickname ?? "익명",
+            avatar: row.profiles?.avatar_url ?? "🧩",
+            cleared: 1,
+            stars: row.stars,
+            bestTime: row.time_sec ?? 999,
+            isMe: row.user_id === session?.user?.id,
           }));
-        setEntries(sorted);
-      } else {
-        // daily: time_sec 오름차순
-        const sorted = raw.map((row, i) => ({
-          rank: i + 1,
-          name: row.profiles?.nickname ?? "익명",
-          avatar: row.profiles?.avatar_url ?? "🧩",
-          cleared: 1,
-          stars: row.stars,
-          bestTime: row.time_sec ?? 999,
-          isMe: row.user_id === session?.user?.id,
-        }));
-        setEntries(sorted);
+          setEntries(sorted);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "알 수 없는 오류";
+        setError(msg);
+        setEntries([]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "알 수 없는 오류";
-      setError(msg);
-      setEntries([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session?.user?.id]);
+    },
+    [session?.user?.id],
+  );
 
   useEffect(() => {
     if (mounted) fetchLeaderboard(tab);
@@ -230,81 +232,83 @@ export default function LeaderboardPage() {
         {/* Podium + Rank (로그인 데이터 있을 때) */}
         {!isLoading && !error && entries.length > 0 && (
           <>
-          <section className="flex items-end justify-center gap-3 pt-8">
-          {podiumOrder.map((entry, i) => (
-            <div key={entry.rank} className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
-              <div className="relative">
-                <div
-                  className={`w-14 h-14 md:w-16 md:h-16 rounded-full ${podiumColors[i]} flex items-center justify-center text-2xl md:text-3xl shadow-pudding ${
-                    entry.isMe ? "ring-2 ring-primary" : ""
-                  }`}
-                >
-                  {entry.avatar}
-                </div>
-                {i === 1 && (
-                  <span
-                    className="material-symbols-outlined absolute -top-3 left-1/2 -translate-x-1/2 text-primary text-2xl"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
+            <section className="flex items-end justify-center gap-3 pt-8">
+              {podiumOrder.map((entry, i) => (
+                <div key={entry.rank} className="flex flex-col items-center gap-2 flex-1 max-w-[120px]">
+                  <div className="relative">
+                    <div
+                      className={`w-14 h-14 md:w-16 md:h-16 rounded-full ${podiumColors[i]} flex items-center justify-center text-2xl md:text-3xl shadow-pudding ${
+                        entry.isMe ? "ring-2 ring-primary" : ""
+                      }`}
+                    >
+                      {entry.avatar}
+                    </div>
+                    {i === 1 && (
+                      <span
+                        className="material-symbols-outlined absolute -top-3 left-1/2 -translate-x-1/2 text-primary text-2xl"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        emoji_events
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={`text-xs font-headline font-bold truncate max-w-full ${entry.isMe ? "text-primary" : ""}`}
                   >
-                    emoji_events
-                  </span>
-                )}
-              </div>
-              <p className={`text-xs font-headline font-bold truncate max-w-full ${entry.isMe ? "text-primary" : ""}`}>
-                {entry.name}
-              </p>
-              <p className="text-[10px] text-on-surface-variant">{entry.stars}★</p>
-              <div
-                className={`w-full ${podiumHeights[i]} ${podiumColors[i]} rounded-t-xl flex items-start justify-center pt-2`}
-              >
-                <span className={`text-lg font-headline font-extrabold ${podiumTextColors[i]}`}>{entry.rank}</span>
-              </div>
-            </div>
-          ))}
-        </section>
+                    {entry.name}
+                  </p>
+                  <p className="text-[10px] text-on-surface-variant">{entry.stars}★</p>
+                  <div
+                    className={`w-full ${podiumHeights[i]} ${podiumColors[i]} rounded-t-xl flex items-start justify-center pt-2`}
+                  >
+                    <span className={`text-lg font-headline font-extrabold ${podiumTextColors[i]}`}>{entry.rank}</span>
+                  </div>
+                </div>
+              ))}
+            </section>
 
-        {/* My Rank Card (sticky) */}
-        {myEntry && (
-          <div className="sticky top-20 z-40 bg-primary-container/20 backdrop-blur-xl border border-primary-container/40 rounded-xl px-5 py-3 flex items-center gap-4 shadow-pudding">
-            <span className="text-lg font-headline font-extrabold text-primary w-8">#{myEntry.rank}</span>
-            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-xl">
-              {myEntry.avatar}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-headline font-bold text-primary">You</p>
-              <p className="text-xs text-on-surface-variant">
-                {myEntry.cleared} cleared • {myEntry.stars}★
-              </p>
-            </div>
-            <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-              person
-            </span>
-          </div>
-        )}
+            {/* My Rank Card (sticky) */}
+            {myEntry && (
+              <div className="sticky top-20 z-40 bg-primary-container/20 backdrop-blur-xl border border-primary-container/40 rounded-xl px-5 py-3 flex items-center gap-4 shadow-pudding">
+                <span className="text-lg font-headline font-extrabold text-primary w-8">#{myEntry.rank}</span>
+                <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-xl">
+                  {myEntry.avatar}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-headline font-bold text-primary">You</p>
+                  <p className="text-xs text-on-surface-variant">
+                    {myEntry.cleared} cleared • {myEntry.stars}★
+                  </p>
+                </div>
+                <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  person
+                </span>
+              </div>
+            )}
 
-        {/* Ranking List */}
-        <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
-          {rest.map((entry) => (
-            <div
-              key={entry.rank}
-              className={`flex items-center gap-4 px-5 py-3 ${entry.isMe ? "bg-primary-container/10" : ""}`}
-            >
-              <span className="text-sm font-headline font-bold text-on-surface-variant w-8">{entry.rank}</span>
-              <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-lg">
-                {entry.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold truncate ${entry.isMe ? "text-primary font-bold" : ""}`}>
-                  {entry.name}
-                </p>
-                <p className="text-xs text-on-surface-variant">
-                  {entry.cleared} cleared • {entry.stars}★
-                </p>
-              </div>
-              <span className="text-xs text-on-surface-variant font-mono">{formatTime(entry.bestTime)}</span>
+            {/* Ranking List */}
+            <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
+              {rest.map((entry) => (
+                <div
+                  key={entry.rank}
+                  className={`flex items-center gap-4 px-5 py-3 ${entry.isMe ? "bg-primary-container/10" : ""}`}
+                >
+                  <span className="text-sm font-headline font-bold text-on-surface-variant w-8">{entry.rank}</span>
+                  <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-lg">
+                    {entry.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${entry.isMe ? "text-primary font-bold" : ""}`}>
+                      {entry.name}
+                    </p>
+                    <p className="text-xs text-on-surface-variant">
+                      {entry.cleared} cleared • {entry.stars}★
+                    </p>
+                  </div>
+                  <span className="text-xs text-on-surface-variant font-mono">{formatTime(entry.bestTime)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
           </>
         )}
       </div>

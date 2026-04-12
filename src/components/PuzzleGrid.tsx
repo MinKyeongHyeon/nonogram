@@ -183,7 +183,7 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
     <div ref={containerRef} className="select-none touch-none w-full max-w-full">
       <div className="relative bg-white/40 backdrop-blur-md rounded-xl p-4 sm:p-6 md:p-8 shadow-[0px_40px_80px_rgba(70,34,62,0.08)] overflow-x-auto">
         <div
-          className="grid"
+          className="grid w-fit mx-auto"
           style={{
             gridTemplateColumns: "auto auto",
             gridTemplateRows: "auto auto",

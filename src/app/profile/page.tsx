@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useProgressStore } from "@/store/useProgressStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/components/Toast";
 import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
 
@@ -67,8 +68,12 @@ const achievements: { id: string; icon: string; label: string; desc: string; che
 export default function ProfilePage() {
   const { getTotalCleared, getTotalStars, streak, records } = useProgressStore();
   const session = useAuthStore((s) => s.session);
+  const showToast = useToast((s) => s.show);
   const [mounted, setMounted] = useState(false);
   const [profileData, setProfileData] = useState<{ nickname: string | null; avatar_url: string | null } | null>(null);
+  const [isEditingNick, setIsEditingNick] = useState(false);
+  const [nickInput, setNickInput] = useState("");
+  const [isSavingNick, setIsSavingNick] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -91,6 +96,37 @@ export default function ProfilePage() {
     session?.user?.user_metadata?.full_name ??
     session?.user?.email?.split("@")[0] ??
     "Puzzle Lover";
+
+  const saveNickname = async () => {
+    if (!session || isSavingNick) return;
+    const trimmed = nickInput.trim();
+    if (!trimmed || trimmed.length > 20) {
+      showToast("닉네임은 1~20자 사이여야 합니다.", "error");
+      return;
+    }
+    setIsSavingNick(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("no session");
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        body: JSON.stringify({ nickname: trimmed }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.message);
+      setProfileData((prev) => ({ ...prev, nickname: trimmed, avatar_url: prev?.avatar_url ?? null }));
+      showToast("닉네임이 저장됐어요.", "success");
+      setIsEditingNick(false);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "닉네임 저장에 실패했어요.", "error");
+    } finally {
+      setIsSavingNick(false);
+    }
+  };
 
   if (!mounted)
     return (
@@ -191,7 +227,45 @@ export default function ProfilePage() {
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-headline font-extrabold">{nickname}</h2>
+            {isEditingNick ? (
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  autoFocus
+                  type="text"
+                  value={nickInput}
+                  onChange={(e) => setNickInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveNickname()}
+                  maxLength={20}
+                  className="bg-surface-container rounded-xl px-3 py-1.5 text-lg font-headline font-bold text-on-surface text-center focus:outline-none focus:ring-2 focus:ring-primary/40 w-44"
+                />
+                <button
+                  onClick={saveNickname}
+                  disabled={isSavingNick}
+                  className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-sm">check</span>
+                </button>
+                <button
+                  onClick={() => setIsEditingNick(false)}
+                  className="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-1.5">
+                <h2 className="text-2xl font-headline font-extrabold">{nickname}</h2>
+                {session && (
+                  <button
+                    onClick={() => { setNickInput(nickname); setIsEditingNick(true); }}
+                    className="text-on-surface-variant hover:text-primary transition-colors"
+                    title="닉네임 변경"
+                  >
+                    <span className="material-symbols-outlined text-base">edit</span>
+                  </button>
+                )}
+              </div>
+            )}
             <p className="text-on-surface-variant text-sm">
               Level {Math.floor(totalCleared / 3) + 1} • {totalCleared} puzzles cleared
             </p>

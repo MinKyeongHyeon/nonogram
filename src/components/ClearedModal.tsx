@@ -7,6 +7,7 @@ import { useProgressStore } from "@/store/useProgressStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { supabase } from "@/lib/supabaseClient";
 import { playClear, haptic } from "@/lib/sound";
+import { useToast } from "@/components/Toast";
 import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
 
@@ -22,6 +23,7 @@ export default function ClearedModal() {
   const recordClear = useProgressStore((s) => s.recordClear);
   const completeDailyChallenge = useProgressStore((s) => s.completeDailyChallenge);
   const session = useAuthStore((s) => s.session);
+  const showToast = useToast((s) => s.show);
   const recorded = useRef(false);
 
   useEffect(() => {
@@ -57,8 +59,10 @@ export default function ClearedModal() {
               time_sec: timer,
               stars,
             }),
+          }).then(async (res) => {
+            if (!res.ok) showToast("기록 저장에 실패했어요. 로컬에는 저장됐어요.", "error");
           }).catch(() => {
-            // 서버 저장 실패 시 로컬 기록은 이미 저장됨 — 무시
+            showToast("네트워크 오류로 기록 저장에 실패했어요.", "error");
           });
         });
       }

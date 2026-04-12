@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { Difficulty } from "@/types/puzzle";
 import { generateCluesFromSolution } from "@/lib/puzzleUtils";
 import { validatePuzzle } from "@/lib/nonogramSolver";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/components/Toast";
 
 export default function AdminEditorPage() {
   const [mounted, setMounted] = useState(false);
@@ -16,6 +18,8 @@ export default function AdminEditorPage() {
   const [history, setHistory] = useState<number[][][]>(() => [makeEmptyGrid(5)]);
   const [historyIdx, setHistoryIdx] = useState(0);
   const [validation, setValidation] = useState<{ valid: boolean; reason?: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const showToast = useToast((s) => s.show);
 
   useEffect(() => setMounted(true), []);
 
@@ -110,6 +114,32 @@ export default function AdminEditorPage() {
   const clues = generateCluesFromSolution(grid);
   const filledCount = grid.flat().filter((c) => c === 1).length;
 
+  const saveToSupabase = async () => {
+    if (!title.trim()) { showToast("제목을 입력해주세요.", "error"); return; }
+    if (filledCount === 0) { showToast("퍼즐이 비어있어요.", "error"); return; }
+    if (!validation?.valid) { showToast("먼저 Validate를 통과해야 합니다.", "error"); return; }
+    setIsSaving(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) { showToast("로그인이 필요합니다.", "error"); return; }
+      const res = await fetch("/api/puzzles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ title: title.trim(), difficulty, grid_data: grid, clues, is_published: false }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.message);
+      showToast(`퍼즐 #${json.id}가 저장됐어요.`, "success");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "저장에 실패했어요.", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleValidate = () => {
     if (filledCount === 0) {
       setValidation({ valid: false, reason: "Grid is empty" });
@@ -196,6 +226,14 @@ export default function AdminEditorPage() {
           </Link>
           <h1 className="text-xl font-headline font-bold">Puzzle Editor</h1>
           <div className="flex-1" />
+          <button
+            onClick={saveToSupabase}
+            disabled={isSaving}
+            className="bg-tertiary text-on-tertiary px-5 py-2 rounded-full text-sm font-headline font-bold shadow-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 mr-2"
+          >
+            <span className="material-symbols-outlined text-base">cloud_upload</span>
+            {isSaving ? "저장 중…" : "Save"}
+          </button>
           <button
             onClick={exportJSON}
             className="bg-primary text-on-primary px-5 py-2 rounded-full text-sm font-headline font-bold shadow-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2"

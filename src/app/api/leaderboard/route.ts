@@ -21,12 +21,31 @@ export async function GET(request: NextRequest) {
       if (error) throw error;
       return NextResponse.json({ ok: true, data });
     } else {
-      // All-time: 유저별 총 stars 집계
+      // All-time: leaderboard_alltime 뷰 사용 (DB 서버에서 집계)
+      // 뷰가 없으면 raw completions 집계로 폴백
+      const { data: viewData, error: viewError } = await supabaseAdmin
+        .from("leaderboard_alltime")
+        .select("user_id, total_stars, cleared_count, nickname, avatar_url")
+        .order("total_stars", { ascending: false })
+        .limit(100);
+
+      if (!viewError && viewData) {
+        // 뷰 응답을 프론트 호환 포맷으로 변환
+        const formatted = viewData.map((row) => ({
+          user_id: row.user_id,
+          stars: row.total_stars,
+          cleared_count: row.cleared_count,
+          profiles: { nickname: row.nickname, avatar_url: row.avatar_url },
+        }));
+        return NextResponse.json({ ok: true, data: formatted });
+      }
+
+      // 뷰 미존재 시 폴백: raw completions (최대 500건)
       const { data, error } = await supabaseAdmin
         .from("puzzle_completions")
         .select("user_id, stars, profiles(nickname, avatar_url)")
         .order("stars", { ascending: false })
-        .limit(50);
+        .limit(500);
 
       if (error) throw error;
       return NextResponse.json({ ok: true, data });
