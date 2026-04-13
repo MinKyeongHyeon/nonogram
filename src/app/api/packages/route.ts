@@ -42,13 +42,9 @@ export async function GET(request: NextRequest) {
   > = {};
 
   if (packageIds.length > 0) {
-    const selectFields = includePuzzles
-      ? "id, package_id, title, difficulty, sort_order, is_published"
-      : "id, package_id";
-
     const { data: puzzleRows } = await supabaseAdmin
       .from("puzzles")
-      .select(selectFields)
+      .select("id, package_id, title, difficulty, sort_order, is_published")
       .in("package_id", packageIds)
       .eq("is_published", true)
       .order("sort_order", { ascending: true });
