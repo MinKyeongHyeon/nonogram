@@ -16,13 +16,10 @@ interface LeaderEntry {
 
 export default function LeaderboardPage() {
   const session = useAuthStore((s) => s.session);
-  const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"all" | "daily">("all");
   const [entries, setEntries] = useState<LeaderEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => setMounted(true), []);
 
   const fetchLeaderboard = useCallback(
     async (currentTab: "all" | "daily") => {
@@ -92,10 +89,10 @@ export default function LeaderboardPage() {
   );
 
   useEffect(() => {
-    if (mounted) fetchLeaderboard(tab);
-  }, [mounted, tab, fetchLeaderboard]);
+    fetchLeaderboard(tab);
+  }, [tab, fetchLeaderboard]);
 
-  if (!mounted)
+  if (isLoading)
     return (
       <main className="min-h-screen bg-surface text-on-surface font-body pb-32 md:pb-12">
         {/* Header skeleton */}

@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   const supabaseAdmin = getSupabaseAdmin();
   const isAdmin = request.nextUrl.searchParams.get("admin") === "1";
   const slugFilter = request.nextUrl.searchParams.get("slug");
+  const includePuzzles = request.nextUrl.searchParams.get("include") === "puzzles";
 
   const query = supabaseAdmin
     .from("packages")
@@ -34,17 +35,40 @@ export async function GET(request: NextRequest) {
   const packageIds = (data ?? []).map((p) => p.id);
   const countMap: Record<number, number> = {};
   const idsMap: Record<number, number[]> = {};
+  // includePuzzles 시 퍼즐 상세 목록도 함께 조회
+  const puzzleDetailMap: Record<
+    number,
+    { id: number; title: string; difficulty: string; sort_order: number; is_published: boolean }[]
+  > = {};
+
   if (packageIds.length > 0) {
+    const selectFields = includePuzzles
+      ? "id, package_id, title, difficulty, sort_order, is_published"
+      : "id, package_id";
+
     const { data: puzzleRows } = await supabaseAdmin
       .from("puzzles")
-      .select("id, package_id")
+      .select(selectFields)
       .in("package_id", packageIds)
       .eq("is_published", true)
       .order("sort_order", { ascending: true });
+
     for (const row of puzzleRows ?? []) {
       if (row.package_id != null) {
         countMap[row.package_id] = (countMap[row.package_id] ?? 0) + 1;
         idsMap[row.package_id] = [...(idsMap[row.package_id] ?? []), row.id];
+        if (includePuzzles) {
+          puzzleDetailMap[row.package_id] = [
+            ...(puzzleDetailMap[row.package_id] ?? []),
+            {
+              id: row.id,
+              title: row.title,
+              difficulty: row.difficulty,
+              sort_order: row.sort_order,
+              is_published: row.is_published,
+            },
+          ];
+        }
       }
     }
   }
@@ -53,6 +77,7 @@ export async function GET(request: NextRequest) {
     ...p,
     puzzle_count: countMap[p.id] ?? 0,
     puzzle_ids: idsMap[p.id] ?? [],
+    ...(includePuzzles && { puzzles: puzzleDetailMap[p.id] ?? [] }),
   }));
 
   // slug 필터 요청일 경우 단일 객체 반환

@@ -366,14 +366,17 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
                   className={cn(
                     "rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center",
                     cellState === 1 && "bg-primary-container",
-                    cellState === -1 && "bg-surface-container-lowest",
+                    cellState === -1 && "bg-surface-container",
                     cellState === 2 && "bg-error-container/30",
                     cellState === 0 && "bg-surface-container-lowest hover:bg-primary-container/30 hover:scale-95",
                   )}
                   style={{ width: cellSize, height: cellSize }}
                 >
                   {cellState === -1 && (
-                    <span className="material-symbols-outlined text-outline-variant opacity-40 text-xs sm:text-sm">
+                    <span
+                      className="material-symbols-outlined text-on-surface-variant text-xs sm:text-sm"
+                      style={{ fontVariationSettings: "'wght' 700" }}
+                    >
                       close
                     </span>
                   )}

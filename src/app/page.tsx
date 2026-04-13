@@ -51,7 +51,7 @@ export default function Home() {
       {/* Top Nav */}
       <nav className="w-full sticky top-0 z-50 bg-surface/70 backdrop-blur-xl shadow-pudding">
         <div className="flex justify-between items-center px-6 md:px-12 py-4 max-w-[1440px] mx-auto">
-          <span className="text-2xl font-headline font-black italic text-primary">Pudding Puzzles</span>
+          <span className="text-2xl font-headline font-black italic text-primary">Nonogram World</span>
           <div className="hidden md:flex gap-10">
             <Link
               href="/"
@@ -105,7 +105,10 @@ export default function Home() {
             <div className="flex gap-4">
               <Link
                 href={firstPuzzleId ? `/puzzle/${firstPuzzleId}` : "/pack/easy"}
-                className="bg-primary text-on-primary px-10 py-5 rounded-full text-lg font-bold shadow-pudding-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                aria-disabled={loadingPacks}
+                className={`bg-primary text-on-primary px-10 py-5 rounded-full text-lg font-bold shadow-pudding-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-3 ${
+                  loadingPacks ? "opacity-50 pointer-events-none" : ""
+                }`}
               >
                 Play Now
                 <span className="material-symbols-outlined">play_circle</span>
@@ -238,6 +241,17 @@ export default function Home() {
           )}
         </section>
       </div>
+
+      {/* Footer */}
+      <footer className="pb-32 md:pb-10 pt-6 text-center text-xs text-on-surface-variant/60 space-x-4">
+        <span>© 2026 Nonogram Play</span>
+        <Link href="/privacy" className="hover:text-primary transition-colors">
+          Privacy Policy
+        </Link>
+        <Link href="/terms" className="hover:text-primary transition-colors">
+          Terms of Service
+        </Link>
+      </footer>
 
       {/* Mobile Bottom Nav */}
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-surface-container-lowest/70 backdrop-blur-xl rounded-t-[3rem] shadow-pudding md:hidden">

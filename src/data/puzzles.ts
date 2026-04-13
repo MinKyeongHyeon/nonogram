@@ -29,12 +29,7 @@ import { puzzleLibrary } from "./puzzle_library";
 export const puzzles: Puzzle[] = puzzleLibrary.map(completePuzzle);
 
 export async function fetchPuzzles(): Promise<Puzzle[]> {
-  // Simulate network request
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(puzzleLibrary.map((p) => completePuzzle(p)));
-    }, 500);
-  });
+  return puzzleLibrary.map((p) => completePuzzle(p));
 }
 
 export async function fetchPuzzleById(id: number): Promise<Puzzle | null> {

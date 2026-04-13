@@ -6,6 +6,7 @@ export type CellState = 0 | 1 | -1 | 2; // 0: empty, 1: filled, -1: marked X, 2:
 
 interface HistoryStep {
   grid: CellState[][];
+  lives: number;
 }
 
 interface PuzzleState {
@@ -14,6 +15,7 @@ interface PuzzleState {
   lives: number;
   status: "idle" | "playing" | "gameover" | "cleared";
   timer: number;
+  timerStartedAt: number | null; // Date.now() when timer last started (not persisted)
   history: HistoryStep[];
   historyIndex: number;
   hints: number;
@@ -40,6 +42,7 @@ export const usePuzzleStore = create<PuzzleState>()(
       lives: MAX_LIVES,
       status: "idle",
       timer: 0,
+      timerStartedAt: null,
       history: [],
       historyIndex: -1,
       hints: MAX_HINTS,
@@ -54,7 +57,8 @@ export const usePuzzleStore = create<PuzzleState>()(
           lives: MAX_LIVES,
           status: "playing",
           timer: 0,
-          history: [{ grid: newGrid }],
+          timerStartedAt: Date.now(),
+          history: [{ grid: newGrid, lives: MAX_LIVES }],
           historyIndex: 0,
           hints: MAX_HINTS,
         });
@@ -142,7 +146,7 @@ export const usePuzzleStore = create<PuzzleState>()(
 
         // Update history
         const newHistory = history.slice(0, historyIndex + 1);
-        newHistory.push({ grid: newGrid });
+        newHistory.push({ grid: newGrid, lives: newLives });
 
         set({
           grid: newGrid,
@@ -159,6 +163,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         const newIndex = historyIndex - 1;
         set({
           grid: history[newIndex].grid,
+          lives: history[newIndex].lives,
           historyIndex: newIndex,
         });
       },
@@ -169,6 +174,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         const newIndex = historyIndex + 1;
         set({
           grid: history[newIndex].grid,
+          lives: history[newIndex].lives,
           historyIndex: newIndex,
         });
       },
@@ -184,16 +190,20 @@ export const usePuzzleStore = create<PuzzleState>()(
           lives: MAX_LIVES,
           status: "playing",
           timer: 0,
-          history: [{ grid: emptyGrid }],
+          timerStartedAt: Date.now(),
+          history: [{ grid: emptyGrid, lives: MAX_LIVES }],
           historyIndex: 0,
+          hints: MAX_HINTS,
         });
       },
 
       tickTimer: () => {
-        const { status } = get();
-        if (status === "playing") {
-          set((state) => ({ timer: state.timer + 1 }));
-        }
+        const { status, timer, timerStartedAt } = get();
+        if (status !== "playing") return;
+        const now = Date.now();
+        // Lazy-init: if timerStartedAt not set (e.g. after page refresh), infer it from persisted timer
+        const startedAt = timerStartedAt ?? now - timer * 1000;
+        set({ timerStartedAt: startedAt, timer: Math.floor((now - startedAt) / 1000) });
       },
 
       clearState: () =>
@@ -203,6 +213,7 @@ export const usePuzzleStore = create<PuzzleState>()(
           lives: MAX_LIVES,
           status: "idle",
           timer: 0,
+          timerStartedAt: null,
           history: [],
           historyIndex: -1,
           hints: MAX_HINTS,
@@ -241,7 +252,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         }
 
         const newHistory = history.slice(0, historyIndex + 1);
-        newHistory.push({ grid: newGrid });
+        newHistory.push({ grid: newGrid, lives: get().lives });
 
         set({
           grid: newGrid,
@@ -263,6 +274,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         timer: state.timer,
         history: state.history,
         historyIndex: state.historyIndex,
+        hints: state.hints,
       }),
     },
   ),

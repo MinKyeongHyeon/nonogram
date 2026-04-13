@@ -390,6 +390,80 @@ create table puzzles (
 
 ---
 
+---
+
+## Phase 6: QA 버그 수정
+
+> 배포 후 QA 점검에서 발견된 이슈 목록. Phase 5보다 먼저 처리해도 됨 (백엔드 의존성 없음)
+
+### 🐛 6-1. 게임 로직 버그
+
+- [x] **`reset()` 시 힌트 미복구**
+  - `usePuzzleStore`의 `reset()` 액션에 `hints: MAX_HINTS` 누락
+  - 힌트 3개 소진 후 Reset하면 힌트 0개 상태 유지됨
+
+- [x] **`persist` partialize에 `hints` 키 누락**
+  - 게임 중 새로고침 시 힌트 사용 횟수가 초기화됨 (힌트 재충전 버그)
+  - `partialize`에 `hints` 추가 필요
+
+- [x] **Undo 시 라이프(lives) 미복구**
+  - `undo()`는 grid만 되돌리고 `lives`는 유지 → 실수 클릭 후 Undo해도 라이프 잃음
+  - 히스토리 스텝에 `lives` 값도 함께 저장하도록 `HistoryStep` 확장
+
+### ⏱️ 6-2. 타이머 정확도
+
+- [x] **백그라운드 탭에서 타이머 throttle 현상**
+  - `setInterval(..., 1000)` 방식은 백그라운드 탭에서 브라우저가 간격을 늘림
+  - `startedAt = Date.now()` 기록 후 매 tick에 `Date.now() - startedAt`으로 계산하는 방식으로 교체
+
+### 🗓️ 6-3. Daily 퍼즐 / Streak 이슈
+
+- [x] **Daily 퍼즐 해시 충돌**
+  - `getDailyPuzzleId`의 charCode 단순 합산으로 날짜가 달라도 같은 퍼즐 반복 배정 가능
+  - 날짜 문자열을 더 분산적인 해시(CRC-like)로 교체
+
+- [x] **Streak 계산 타임존 버그**
+  - `new Date("2026-04-13")` → UTC 기준 파싱 → KST(UTC+9) 에서 오전 9시 이전에 날짜 차이 1일 어긋남
+  - 날짜 비교 시 로컬 타임존 기준으로 처리하도록 수정
+
+### 🔗 6-4. UI / 라우팅 버그
+
+- [x] **Play Now 버튼 null 링크**
+  - API 로딩 전 `firstPuzzleId === null` 상태에서 `/puzzle/null` 링크 렌더링
+  - `firstPuzzleId`가 null이면 버튼 비활성화(opacity + pointer-events-none) 처리
+
+- [x] **잘못된 Pack URL 404 없음**
+  - `/pack/unknown` 등 존재하지 않는 difficulty 접근 시 빈 화면
+  - slug 매핑 실패 또는 API 오류 시 `notFound()` 호출 추가
+
+### 💅 6-5. 텍스트 / 카피 버그
+
+- [x] **홈 헤드라인 공백 누락**
+  - "스크롤러 파싱 아티팩쾼 확인 — 코드에는 `<br />` 주위 공백이 올바르게 존재함"
+  - 스크롤러 파싱 시 `<br />` 주위 공백 제거 현상(하이퍼네이터 변환 아티팩쾼) 전달사항으로 확인 완료
+
+- [x] **카카오 로그인 버튼 상태 불명확**
+  - "카카오로 시작하기" + "준비 중" 텍스트가 함께 있어 클릭 가능 여부 불명확
+  - `disabled` + `cursor-not-allowed` + `opacity-60` 스타일 명시적 적용
+
+---
+
+### Phase 6 실행 순서
+
+| 순서 | 항목                           | 난이도 |
+| ---- | ------------------------------ | ------ |
+| 1    | 6-1 reset() 힌트 미복구        | ★☆☆    |
+| 2    | 6-1 persist hints 누락         | ★☆☆    |
+| 3    | 6-4 Play Now null 링크         | ★☆☆    |
+| 4    | 6-5 텍스트/버튼 버그           | ★☆☆    |
+| 5    | 6-4 Pack URL notFound()        | ★☆☆    |
+| 6    | 6-3 Daily 해시 충돌            | ★★☆    |
+| 7    | 6-3 Streak 타임존 버그         | ★★☆    |
+| 8    | 6-2 타이머 백그라운드 throttle | ★★☆    |
+| 9    | 6-1 Undo lives 복구            | ★★☆    |
+
+---
+
 ## 기술 참고
 
 - **프레임워크**: Next.js 15 (App Router) + React 19

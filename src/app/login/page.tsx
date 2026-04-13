@@ -69,11 +69,13 @@ function LoginContent() {
         {/* 카카오 로그인 (준비 중) */}
         <button
           disabled
-          className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl font-bold text-[#3C1E1E]/50 bg-[#FEE500]/40 cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl font-bold text-[#3C1E1E]/40 bg-[#FEE500]/30 cursor-not-allowed opacity-60"
         >
           <KakaoIcon />
           카카오로 시작하기
-          <span className="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full ml-1">준비 중</span>
+          <span className="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full ml-1">
+            준비 중
+          </span>
         </button>
 
         {/* 비로그인 안내 */}

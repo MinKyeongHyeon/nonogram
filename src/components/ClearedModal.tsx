@@ -12,8 +12,16 @@ import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
 
 function getDailyPuzzleId(dateStr: string): number {
-  const hash = dateStr.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  // djb2-like multiplicative hash — prevents collisions from simple charCode sum
+  let hash = 5381;
+  for (let i = 0; i < dateStr.length; i++) {
+    hash = (((hash << 5) + hash) ^ dateStr.charCodeAt(i)) >>> 0;
+  }
   return puzzles[hash % puzzles.length].id;
+}
+
+function localDateStr(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function ClearedModal() {
@@ -38,7 +46,7 @@ export default function ClearedModal() {
       recordClear(currentPuzzle.id, timer);
 
       // Check if this is today's daily challenge
-      const today = new Date().toISOString().split("T")[0];
+      const today = localDateStr();
       if (currentPuzzle.id === getDailyPuzzleId(today)) {
         completeDailyChallenge(today);
       }

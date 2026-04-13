@@ -29,21 +29,26 @@ function calcStars(time: number): number {
   return 1;
 }
 
+function localDateStr(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function calcStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
   const sorted = [...dates].sort().reverse();
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const today = localDateStr();
+  const yesterday = localDateStr(new Date(Date.now() - 86400000));
 
   // Streak must include today or yesterday
   if (sorted[0] !== today && sorted[0] !== yesterday) return 0;
 
   let count = 1;
   for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]);
-    const curr = new Date(sorted[i]);
+    // Use noon to avoid DST edge cases
+    const prev = new Date(sorted[i - 1] + "T12:00:00");
+    const curr = new Date(sorted[i] + "T12:00:00");
     const diff = (prev.getTime() - curr.getTime()) / 86400000;
-    if (diff === 1) {
+    if (Math.round(diff) === 1) {
       count++;
     } else {
       break;

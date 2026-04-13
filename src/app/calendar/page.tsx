@@ -8,8 +8,11 @@ import Link from "next/link";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function getDailyPuzzleId(dateStr: string): number {
-  // Deterministic puzzle mapping from date
-  const hash = dateStr.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  // djb2-like multiplicative hash — prevents collisions from simple charCode sum
+  let hash = 5381;
+  for (let i = 0; i < dateStr.length; i++) {
+    hash = (((hash << 5) + hash) ^ dateStr.charCodeAt(i)) >>> 0;
+  }
   return puzzles[hash % puzzles.length].id;
 }
 
@@ -19,7 +22,10 @@ export default function CalendarPage() {
   const [viewDate, setViewDate] = useState(() => new Date());
   useEffect(() => setMounted(true), []);
 
-  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const today = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 

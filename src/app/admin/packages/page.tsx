@@ -110,7 +110,11 @@ export default function AdminPackagesPage() {
     setCreating(true);
     setError(null);
     const token = await getToken();
-    if (!token) { setError("로그인이 필요합니다."); setCreating(false); return; }
+    if (!token) {
+      setError("로그인이 필요합니다.");
+      setCreating(false);
+      return;
+    }
     const res = await fetch("/api/packages", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -163,7 +167,10 @@ export default function AdminPackagesPage() {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => { setShowNewForm((v) => !v); setError(null); }}
+              onClick={() => {
+                setShowNewForm((v) => !v);
+                setError(null);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-sm font-bold hover:opacity-90 transition-opacity"
             >
               <span className="material-symbols-outlined text-base">add</span>
@@ -181,7 +188,9 @@ export default function AdminPackagesPage() {
             <h2 className="text-lg font-headline font-bold">New Package</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Slug <span className="text-error">*</span></label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                  Slug <span className="text-error">*</span>
+                </label>
                 <input
                   className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                   placeholder="e.g. premium-hard"
@@ -190,7 +199,9 @@ export default function AdminPackagesPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Title <span className="text-error">*</span></label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                  Title <span className="text-error">*</span>
+                </label>
                 <input
                   className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                   placeholder="e.g. Premium Hard Pack"
@@ -213,13 +224,18 @@ export default function AdminPackagesPage() {
                   value={newState.difficulty}
                   onChange={(e) => setNewState({ ...newState, difficulty: e.target.value })}
                 >
-                  {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
+                  {DIFFICULTIES.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Price (₩)</label>
                 <input
-                  type="number" min={0}
+                  type="number"
+                  min={0}
                   className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                   value={newState.price}
                   onChange={(e) => setNewState({ ...newState, price: Number(e.target.value) })}
@@ -235,7 +251,9 @@ export default function AdminPackagesPage() {
                 />
               </div>
               <div className="space-y-1 col-span-2">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Description</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                  Description
+                </label>
                 <input
                   className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-sm"
                   placeholder="Optional description"
@@ -246,7 +264,11 @@ export default function AdminPackagesPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button
-                onClick={() => { setShowNewForm(false); setNewState(EMPTY_NEW); setError(null); }}
+                onClick={() => {
+                  setShowNewForm(false);
+                  setNewState(EMPTY_NEW);
+                  setError(null);
+                }}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
               >
                 Cancel

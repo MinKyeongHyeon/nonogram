@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use, useCallback } from "react";
+import { notFound } from "next/navigation";
 import { useProgressStore } from "@/store/useProgressStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
@@ -49,7 +50,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
   const [purchased, setPurchased] = useState(false);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []); // persist 값 hydration 가드용
 
   const slug = DIFFICULTY_TO_SLUG[difficulty] ?? null;
   const meta = DIFFICULTY_META[difficulty];
@@ -60,19 +61,14 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
       return;
     }
     try {
-      // 1) packages 목록 API에서 slug로 단일 패키지 조회
-      const r = await fetch(`/api/packages?slug=${slug}`);
+      // slug + include=puzzles 로 한 번에 패키지 + 퍼즐 목록 조회
+      const r = await fetch(`/api/packages?slug=${slug}&include=puzzles`);
       const json = await r.json();
       if (!json.ok) {
         setLoading(false);
         return;
       }
-      const pkgBase = json.data as Omit<PackData, "puzzles">;
-
-      // 2) 해당 패키지 ID로 퍼즐 목록 조회
-      const pr = await fetch(`/api/packages/${pkgBase.id}`);
-      const pj = await pr.json();
-      setPack(pj.ok ? { ...pkgBase, puzzles: pj.data.puzzles ?? [] } : { ...pkgBase, puzzles: [] });
+      setPack(json.data as PackData);
     } catch {
       // ignore
     } finally {
@@ -105,7 +101,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
   }, [pack, session]);
 
   // 스켈레톤
-  if (!mounted || loading) {
+  if (loading) {
     return (
       <main className="min-h-screen bg-surface text-on-surface font-body pb-32 md:pb-12">
         <header className="w-full bg-surface/70 backdrop-blur-xl shadow-pudding sticky top-0 z-50">
@@ -152,19 +148,17 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
   }
 
   if (!pack || !meta) {
-    return (
-      <main className="min-h-screen bg-surface flex items-center justify-center">
-        <p className="text-on-surface-variant">Pack not found.</p>
-      </main>
-    );
+    notFound();
   }
 
   const packPuzzles = pack.puzzles;
-  const clearedCount = packPuzzles.filter((p) => records.some((r) => r.puzzleId === p.id)).length;
-  const totalStars = packPuzzles.reduce((sum, p) => {
-    const rec = getBestRecord(p.id);
-    return sum + (rec?.stars ?? 0);
-  }, 0);
+  const clearedCount = mounted ? packPuzzles.filter((p) => records.some((r) => r.puzzleId === p.id)).length : 0;
+  const totalStars = mounted
+    ? packPuzzles.reduce((sum, p) => {
+        const rec = getBestRecord(p.id);
+        return sum + (rec?.stars ?? 0);
+      }, 0)
+    : 0;
   const maxStars = packPuzzles.length * 3;
   const pct = packPuzzles.length > 0 ? Math.round((clearedCount / packPuzzles.length) * 100) : 0;
 
@@ -313,7 +307,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2">
               {packPuzzles.map((p) => {
-                const rec = getBestRecord(p.id);
+                const rec = mounted ? getBestRecord(p.id) : null;
                 const isCleared = !!rec;
                 const stars = rec?.stars ?? 0;
                 const displayName = p.title.replace(/^(Easy|Medium|Hard)\s*-\s*/i, "");
