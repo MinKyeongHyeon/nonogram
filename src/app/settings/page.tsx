@@ -188,7 +188,7 @@ export default function SettingsPage() {
         </section>
 
         {/* App Info */}
-        <p className="text-center text-xs text-on-surface-variant/60 pt-4">Pudding Puzzles v0.1.0</p>
+        <p className="text-center text-xs text-on-surface-variant/60 pt-4">Nonogram Play v0.1.0</p>
       </div>
     </main>
   );

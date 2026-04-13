@@ -36,7 +36,7 @@ function LoginContent() {
         <div className="w-20 h-20 rounded-[2rem] bg-primary-container flex items-center justify-center mx-auto mb-4 shadow-pudding">
           <span className="text-4xl">🍮</span>
         </div>
-        <h1 className="text-3xl font-headline font-extrabold text-on-surface">Pudding Puzzles</h1>
+        <h1 className="text-3xl font-headline font-extrabold text-on-surface">Nonogram Play</h1>
         <p className="text-sm text-on-surface-variant mt-1">귀여운 노노그램 퍼즐 게임</p>
       </div>
 

@@ -150,7 +150,7 @@ export default function PuzzlePage() {
       <header className="w-full px-8 py-4 bg-surface hidden md:block">
         <nav className="flex justify-between items-center w-full max-w-[1440px] mx-auto">
           <Link href="/" className="text-3xl font-headline font-black text-primary tracking-tighter italic">
-            Pudding Puzzles
+            Nonogram Play
           </Link>
           <div className="flex items-center gap-8 font-headline text-lg font-bold tracking-tight">
             <Link href="/" className="text-on-surface-variant hover:text-primary transition-colors duration-300">

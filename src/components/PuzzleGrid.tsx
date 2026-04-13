@@ -337,12 +337,30 @@ export default function PuzzleGrid({ touchMode }: { touchMode: "fill" | "mark" }
           {/* Cell Grid */}
           <div
             className="bg-surface-container-low rounded-xl"
-            style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${currentPuzzle.cols}, ${cellSize}px)`,
-              gap: gapSize,
-              padding: gridPadding,
-            }}
+            style={(() => {
+              const step = cellSize + gapSize;
+              const dc = "rgba(0,0,0,0.1)";
+              const gradients: string[] = [];
+              for (let n = 5; n < currentPuzzle.cols; n += 5) {
+                const x = gridPaddingPx + n * step - gapSize / 2;
+                gradients.push(
+                  `linear-gradient(90deg, transparent ${x - 0.5}px, ${dc} ${x - 0.5}px, ${dc} ${x + 0.5}px, transparent ${x + 0.5}px)`,
+                );
+              }
+              for (let n = 5; n < currentPuzzle.rows; n += 5) {
+                const y = gridPaddingPx + n * step - gapSize / 2;
+                gradients.push(
+                  `linear-gradient(0deg, transparent ${y - 0.5}px, ${dc} ${y - 0.5}px, ${dc} ${y + 0.5}px, transparent ${y + 0.5}px)`,
+                );
+              }
+              return {
+                display: "grid",
+                gridTemplateColumns: `repeat(${currentPuzzle.cols}, ${cellSize}px)`,
+                gap: gapSize,
+                padding: gridPadding,
+                ...(gradients.length && { backgroundImage: gradients.join(", ") }),
+              };
+            })()}
             onTouchStart={onGridTouchStart}
             onTouchMove={onGridTouchMove}
             onTouchEnd={onGridTouchEnd}
