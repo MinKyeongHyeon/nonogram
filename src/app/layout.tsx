@@ -21,6 +21,9 @@ const vietnam = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: "Nonogram Play",
   description: "카와이 스타일 노노그램 퍼즐 게임",
+  other: {
+    "google-adsense-account": "ca-pub-3518741028972783",
+  },
 };
 
 export default function RootLayout({
