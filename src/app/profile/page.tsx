@@ -66,7 +66,7 @@ const achievements: { id: string; icon: string; label: string; desc: string; che
 ];
 
 export default function ProfilePage() {
-  const { getTotalCleared, getTotalStars, streak, records } = useProgressStore();
+  const { getTotalStars, streak, records } = useProgressStore();
   const session = useAuthStore((s) => s.session);
   const showToast = useToast((s) => s.show);
   const [mounted, setMounted] = useState(false);
@@ -74,8 +74,20 @@ export default function ProfilePage() {
   const [isEditingNick, setIsEditingNick] = useState(false);
   const [nickInput, setNickInput] = useState("");
   const [isSavingNick, setIsSavingNick] = useState(false);
+  const [totalPuzzles, setTotalPuzzles] = useState<number>(0);
 
-  useEffect(() => setMounted(true), []);
+    useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    fetch("/api/packages")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.ok) {
+          const total = (json.data as { puzzle_count: number }[]).reduce((s, p) => s + p.puzzle_count, 0);
+          setTotalPuzzles(total);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -191,7 +203,8 @@ export default function ProfilePage() {
       </main>
     );
 
-  const totalCleared = getTotalCleared();
+  // 실제 존재하는 퍼즐 기준 클리어 수 (서버 동기화로 인해 유효하지 않은 ID 제외)
+  const totalCleared = Math.min(records.length, totalPuzzles || records.length);
   const totalStars = getTotalStars();
 
   return (
@@ -280,7 +293,7 @@ export default function ProfilePage() {
           <StatCard
             icon="extension"
             label="Cleared"
-            value={`${totalCleared}/${puzzles.length}`}
+            value={`${totalCleared}/${totalPuzzles || "…"}`}
             color="bg-tertiary-container"
             iconColor="text-tertiary"
           />
