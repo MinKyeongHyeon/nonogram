@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Be_Vietnam_Pro } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import DarkModeSync from "@/components/DarkModeSync";
 import AuthProvider from "@/components/AuthProvider";
@@ -33,19 +32,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`${jakarta.variable} ${vietnam.variable} h-full antialiased`}>
+      <head>
+        {/* Google AdSense */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3518741028972783"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-surface text-on-surface font-body">
         <DarkModeSync />
         <AuthProvider />
         <ToastContainer />
         {children}
-        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-          <Script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
-            crossOrigin="anonymous"
-            strategy="afterInteractive"
-          />
-        )}
       </body>
     </html>
   );
