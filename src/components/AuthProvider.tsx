@@ -10,10 +10,14 @@ async function syncCompletionsToLocal(accessToken: string) {
 
   const { data, error } = await supabase
     .from("puzzle_completions")
-    .select("puzzle_id, time_sec, stars, created_at")
-    .order("created_at", { ascending: false });
+    .select("puzzle_id, time_sec, stars, completed_at")
+    .order("completed_at", { ascending: false });
 
-  if (error || !data) return;
+  if (error) {
+    console.error("[syncCompletionsToLocal] failed:", error.code, error.message);
+    return;
+  }
+  if (!data) return;
 
   // 퍼즐별 최고 기록만 추출 (서버에 중복 저장된 경우 대비)
   const bestMap = new Map<number, { time: number; stars: number; clearedAt: string }>();
@@ -21,7 +25,7 @@ async function syncCompletionsToLocal(accessToken: string) {
     const pid = Number(row.puzzle_id);
     const existing = bestMap.get(pid);
     if (!existing || row.stars > existing.stars || (row.stars === existing.stars && row.time_sec < existing.time)) {
-      bestMap.set(pid, { time: row.time_sec, stars: row.stars, clearedAt: row.created_at });
+      bestMap.set(pid, { time: row.time_sec, stars: row.stars, clearedAt: row.completed_at });
     }
   }
 
