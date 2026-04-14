@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Difficulty } from "@/types/puzzle";
 import { generateCluesFromSolution } from "@/lib/puzzleUtils";
-import { validatePuzzle } from "@/lib/nonogramSolver";
+import { validatePuzzle, solveNonogram } from "@/lib/nonogramSolver";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/components/Toast";
 
@@ -38,6 +38,7 @@ export default function AdminEditorPage() {
   const [history, setHistory] = useState<number[][][]>(() => [makeEmptyGrid(5)]);
   const [historyIdx, setHistoryIdx] = useState(0);
   const [validation, setValidation] = useState<{ valid: boolean; reason?: string } | null>(null);
+  const [difficultyHint, setDifficultyHint] = useState<Difficulty | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [puzzleList, setPuzzleList] = useState<PuzzleListItem[]>([]);
@@ -327,10 +328,22 @@ export default function AdminEditorPage() {
   const handleValidate = () => {
     if (filledCount === 0) {
       setValidation({ valid: false, reason: "Grid is empty" });
+      setDifficultyHint(null);
       return;
     }
     const result = validatePuzzle(grid, clues.rows, clues.cols);
     setValidation(result);
+    if (result.valid) {
+      const solveResult = solveNonogram(clues.rows, clues.cols);
+      const score = solveResult.iterations / size;
+      let hint: Difficulty;
+      if (score < 0.5) hint = "easy";
+      else if (score < 1.0) hint = "medium";
+      else hint = "hard";
+      setDifficultyHint(hint);
+    } else {
+      setDifficultyHint(null);
+    }
   };
 
   if (!mounted)
@@ -529,17 +542,38 @@ export default function AdminEditorPage() {
               Validate Puzzle
             </button>
             {validation && (
-              <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${
-                  validation.valid
-                    ? "bg-tertiary-container text-on-tertiary-container"
-                    : "bg-error-container text-on-error-container"
-                }`}
-              >
-                <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  {validation.valid ? "check_circle" : "error"}
-                </span>
-                {validation.valid ? "Solvable by logic alone!" : validation.reason}
+              <div className="flex flex-col items-center gap-2">
+                <div
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${
+                    validation.valid
+                      ? "bg-tertiary-container text-on-tertiary-container"
+                      : "bg-error-container text-on-error-container"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    {validation.valid ? "check_circle" : "error"}
+                  </span>
+                  {validation.valid ? "Solvable by logic alone!" : validation.reason}
+                </div>
+                {difficultyHint && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-sm">
+                    <span className="material-symbols-outlined text-base text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                    <span className="text-on-surface-variant">Suggested:</span>
+                    <span className={`font-bold capitalize ${
+                      difficultyHint === "easy" ? "text-tertiary" : difficultyHint === "medium" ? "text-secondary" : "text-primary"
+                    }`}>{difficultyHint}</span>
+                    {difficultyHint !== difficulty ? (
+                      <button
+                        onClick={() => setDifficulty(difficultyHint)}
+                        className="ml-1 bg-secondary text-on-secondary px-2 py-0.5 rounded-full text-xs font-bold hover:scale-105 active:scale-95 transition-all"
+                      >
+                        Apply
+                      </button>
+                    ) : (
+                      <span className="ml-1 text-xs text-on-surface-variant">(already set)</span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
