@@ -279,7 +279,7 @@ export default function Home() {
                       return (
                         <div className="aspect-video rounded-lg relative overflow-hidden">
                           {cover ? (
-                            <Image src={cover} alt={pack.title} fill className="object-cover" />
+                            <Image src={cover} alt={pack.title} fill className="object-cover" priority />
                           ) : (
                             <div className={`w-full h-full ${meta.color} flex items-center justify-center`}>
                               <span className="text-5xl">{pack.cover_emoji}</span>
