@@ -557,11 +557,24 @@ export default function AdminEditorPage() {
                 </div>
                 {difficultyHint && (
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-sm">
-                    <span className="material-symbols-outlined text-base text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                    <span
+                      className="material-symbols-outlined text-base text-secondary"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      auto_awesome
+                    </span>
                     <span className="text-on-surface-variant">Suggested:</span>
-                    <span className={`font-bold capitalize ${
-                      difficultyHint === "easy" ? "text-tertiary" : difficultyHint === "medium" ? "text-secondary" : "text-primary"
-                    }`}>{difficultyHint}</span>
+                    <span
+                      className={`font-bold capitalize ${
+                        difficultyHint === "easy"
+                          ? "text-tertiary"
+                          : difficultyHint === "medium"
+                            ? "text-secondary"
+                            : "text-primary"
+                      }`}
+                    >
+                      {difficultyHint}
+                    </span>
                     {difficultyHint !== difficulty ? (
                       <button
                         onClick={() => setDifficulty(difficultyHint)}
