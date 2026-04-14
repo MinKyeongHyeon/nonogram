@@ -25,7 +25,7 @@ function localDateStr(d = new Date()): string {
 }
 
 export default function ClearedModal() {
-  const { currentPuzzle, timer, reset } = usePuzzleStore();
+  const { currentPuzzle, sourcePackDifficulty, timer, reset } = usePuzzleStore();
   const sound = useSettingsStore((s) => s.sound);
   const hapticsOn = useSettingsStore((s) => s.haptics);
   const recordClear = useProgressStore((s) => s.recordClear);
@@ -186,9 +186,9 @@ export default function ClearedModal() {
           >
             Play Again
           </button>
-          {currentPuzzle?.difficulty && (
+          {(sourcePackDifficulty ?? currentPuzzle?.difficulty) && (
             <Link
-              href={`/pack/${currentPuzzle.difficulty}`}
+              href={`/pack/${sourcePackDifficulty ?? currentPuzzle?.difficulty}`}
               className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors text-center"
             >
               Back to Package

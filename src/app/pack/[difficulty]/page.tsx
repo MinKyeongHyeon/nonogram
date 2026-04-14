@@ -315,7 +315,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
                 return (
                   <Link
                     key={p.id}
-                    href={`/puzzle/${p.id}`}
+                    href={`/puzzle/${p.id}?pack=${difficulty}`}
                     className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm font-medium transition-all hover:-translate-y-1 ${
                       isCleared
                         ? "bg-tertiary-container text-on-tertiary-container"

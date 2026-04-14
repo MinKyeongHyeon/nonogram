@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
 import { fetchPuzzleById } from "@/data/puzzles";
@@ -13,8 +13,9 @@ import Link from "next/link";
 export default function PuzzlePage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = Number(params.id);
-  const { currentPuzzle, initPuzzle, status, timer, lives, tickTimer } = usePuzzleStore();
+  const { currentPuzzle, initPuzzle, setSourcePackDifficulty, status, timer, lives, tickTimer } = usePuzzleStore();
   const [loading, setLoading] = useState(true);
   const [touchMode, setTouchMode] = useState<"fill" | "mark">("fill");
   const [mounted, setMounted] = useState(false);
@@ -25,10 +26,12 @@ export default function PuzzlePage() {
     fetchPuzzleById(id).then((puzzle) => {
       if (puzzle) {
         initPuzzle(puzzle);
+        const packParam = searchParams.get("pack");
+        setSourcePackDifficulty(packParam);
       }
       setLoading(false);
     });
-  }, [id, initPuzzle]);
+  }, [id, initPuzzle, setSourcePackDifficulty, searchParams]);
 
   // Timer
   useEffect(() => {
