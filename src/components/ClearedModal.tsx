@@ -81,12 +81,170 @@ export default function ClearedModal() {
         });
       }
     }
-  }, [currentPuzzle, timer, recordClear, completeDailyChallenge, session]);
+  }, [currentPuzzle, timer, recordClear, completeDailyChallenge, session, showToast]);
 
   const formatTimer = (s: number) => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleShare = async () => {
+    if (!currentPuzzle) return;
+
+    const stars = calcStars(timer, currentPuzzle.rows, currentPuzzle.cols);
+    const timeStr = formatTimer(timer);
+    const puzzleName = currentPuzzle.name ?? "Puzzle";
+
+    const W = 400;
+    const H = 520;
+    const dpr = 2;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+
+    // Background
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#fdf8ff");
+    grad.addColorStop(1, "#f3e8ff");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(0, 0, W, H, 24);
+    } else {
+      ctx.rect(0, 0, W, H);
+    }
+    ctx.fill();
+
+    // Celebration circle
+    ctx.beginPath();
+    ctx.arc(W / 2, 56, 36, 0, Math.PI * 2);
+    ctx.fillStyle = "#a8edde";
+    ctx.fill();
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    ctx.font = "32px sans-serif";
+    ctx.fillText("🎉", W / 2, 56);
+
+    // Grid preview
+    const gridSize = 160;
+    const gridX = (W - gridSize) / 2;
+    const gridY = 110;
+    const { cols, rows } = currentPuzzle;
+    const cellTotal = (gridSize - 8) / Math.max(cols, rows);
+    const gap = Math.max(1, Math.floor(cellTotal * 0.12));
+    const cellDraw = cellTotal - gap;
+    const offX = gridX + 4 + (gridSize - 8 - cols * cellTotal) / 2;
+    const offY = gridY + 4 + (gridSize - 8 - rows * cellTotal) / 2;
+
+    ctx.fillStyle = "#ede9f3";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(gridX, gridY, gridSize, gridSize, 10);
+    } else {
+      ctx.rect(gridX, gridY, gridSize, gridSize);
+    }
+    ctx.fill();
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = currentPuzzle.solution[r][c];
+        const x = offX + c * cellTotal;
+        const y = offY + r * cellTotal;
+        ctx.fillStyle = cell === 1 ? "#6a45b2" : "#fdf8ff";
+        ctx.beginPath();
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(x, y, cellDraw, cellDraw, 2);
+        } else {
+          ctx.rect(x, y, cellDraw, cellDraw);
+        }
+        ctx.fill();
+      }
+    }
+
+    // Title
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#3d3248";
+    ctx.font = "bold 26px system-ui, sans-serif";
+    ctx.fillText(cm.title, W / 2, 300);
+
+    ctx.fillStyle = "#7b6f87";
+    ctx.font = "15px system-ui, sans-serif";
+    ctx.fillText(`${puzzleName} ${cm.completed}`, W / 2, 322);
+
+    // Divider
+    ctx.strokeStyle = "#e8e0f0";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(48, 342);
+    ctx.lineTo(W - 48, 342);
+    ctx.stroke();
+
+    // Stats — time (left) / stars (right)
+    const leftX = W / 2 - 64;
+    const rightX = W / 2 + 64;
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#3d3248";
+    ctx.font = "bold 28px system-ui, sans-serif";
+    ctx.fillText(timeStr, leftX, 382);
+    ctx.fillStyle = "#7b6f87";
+    ctx.font = "13px system-ui, sans-serif";
+    ctx.fillText(cm.time, leftX, 402);
+
+    ctx.fillStyle = "#6a45b2";
+    ctx.font = "bold 26px system-ui, sans-serif";
+    ctx.fillText("★".repeat(stars) + "☆".repeat(3 - stars), rightX, 382);
+    ctx.fillStyle = "#7b6f87";
+    ctx.font = "13px system-ui, sans-serif";
+    ctx.fillText(cm.stars, rightX, 402);
+
+    // Branding
+    ctx.fillStyle = "#c5b8d9";
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText("nonogram", W / 2, H - 22);
+
+    // Share
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        showToast(cm.shareFailed, "error");
+        return;
+      }
+      const shareText = `${puzzleName} ${cm.completed} ⏱ ${timeStr}  ${"★".repeat(stars)}`;
+      const file = new File([blob], "nonogram-cleared.png", { type: "image/png" });
+
+      const canNativeShare =
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] });
+
+      if (canNativeShare) {
+        try {
+          await navigator.share({ title: cm.shareTitle, text: shareText, files: [file] });
+        } catch (e) {
+          if ((e as DOMException).name !== "AbortError") {
+            showToast(cm.shareFailed, "error");
+          }
+        }
+        return;
+      }
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        showToast(cm.shareCopied, "success");
+      } catch {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "nonogram-cleared.png";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }, "image/png");
   };
 
   const confettiColors = ["#fe7db8", "#dcc9ff", "#98ffd9", "#f74b6d", "#ffd700", "#6a45b2"];
@@ -200,6 +358,15 @@ export default function ClearedModal() {
             className="w-full bg-primary text-on-primary py-3.5 rounded-full font-headline font-bold shadow-soft-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             {cm.playAgain}
+          </button>
+          <button
+            onClick={handleShare}
+            className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 0" }}>
+              share
+            </span>
+            {cm.share}
           </button>
           {(sourcePackDifficulty ?? currentPuzzle?.difficulty) && (
             <Link
