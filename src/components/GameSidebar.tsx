@@ -3,6 +3,7 @@
 import React from "react";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useTranslation } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -15,15 +16,17 @@ interface GameSidebarProps {
 export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSidebarProps) {
   const { currentPuzzle, status, useHint, hints, reset } = usePuzzleStore();
   const { sound, toggleSound } = useSettingsStore();
+  const { t } = useTranslation();
+  const g = t.game;
   const router = useRouter();
   const disabled = status !== "playing";
 
   const difficultyLabel =
     currentPuzzle?.difficulty === "easy"
-      ? "Starter Pack"
+      ? g.starterPack
       : currentPuzzle?.difficulty === "medium"
-        ? "Sweet Pack"
-        : "Challenge Pack";
+        ? g.sweetPack
+        : g.challengePack;
 
   if (mobile) {
     return (
@@ -41,7 +44,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           >
             edit
           </span>
-          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">Fill</span>
+          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">{g.fill}</span>
         </button>
         <button
           onClick={() => setTouchMode("mark")}
@@ -51,7 +54,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           )}
         >
           <span className="material-symbols-outlined text-xl">close</span>
-          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">Mark X</span>
+          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">{g.markX}</span>
         </button>
         <button
           onClick={useHint}
@@ -62,14 +65,16 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           )}
         >
           <span className="material-symbols-outlined text-xl">lightbulb</span>
-          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">Hint ({hints})</span>
+          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">
+            {g.hint} ({hints})
+          </span>
         </button>
         <button
           onClick={reset}
           className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-full transition-all active:scale-95 text-on-surface-variant"
         >
           <span className="material-symbols-outlined text-xl">restart_alt</span>
-          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">Reset</span>
+          <span className="text-[10px] font-headline font-bold uppercase tracking-widest">{g.reset}</span>
         </button>
       </div>
     );
@@ -107,7 +112,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
             edit
           </span>
-          <span>Fill Mode</span>
+          <span>{g.fillMode}</span>
         </button>
 
         {/* Mark X */}
@@ -122,7 +127,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           style={{ width: "calc(100% - 2rem)" }}
         >
           <span className="material-symbols-outlined">close</span>
-          <span>Mark X</span>
+          <span>{g.markMode}</span>
         </button>
 
         {/* Hint */}
@@ -137,7 +142,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           style={{ width: "calc(100% - 2rem)" }}
         >
           <span className="material-symbols-outlined">lightbulb</span>
-          <span>Hint</span>
+          <span>{g.hint}</span>
         </button>
 
         {/* Reset */}
@@ -147,7 +152,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           style={{ width: "calc(100% - 2rem)" }}
         >
           <span className="material-symbols-outlined">restart_alt</span>
-          <span>Reset</span>
+          <span>{g.reset}</span>
         </button>
       </div>
 
@@ -162,11 +167,11 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
             )}
           >
             <span className="material-symbols-outlined">{sound ? "volume_up" : "volume_off"}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Sound</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">{g.sound}</span>
           </button>
           <button className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors">
             <span className="material-symbols-outlined">music_note</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Music</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">{g.music}</span>
           </button>
         </div>
         <div className="px-4">
@@ -174,7 +179,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
             onClick={() => router.push("/")}
             className="w-full py-4 rounded-full bg-error text-on-error font-headline font-extrabold tracking-tight active:scale-95 transition-transform"
           >
-            Quit Game
+            {g.quitGame}
           </button>
         </div>
       </div>

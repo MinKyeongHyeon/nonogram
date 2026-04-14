@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import DarkModeSync from "@/components/DarkModeSync";
+import LangSync from "@/components/LangSync";
 import AuthProvider from "@/components/AuthProvider";
 import ToastContainer from "@/components/Toast";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-surface text-on-surface font-body">
         <DarkModeSync />
+        <LangSync />
         <AuthProvider />
         <ToastContainer />
         {children}

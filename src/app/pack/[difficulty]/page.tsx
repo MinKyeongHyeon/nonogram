@@ -4,6 +4,7 @@ import { useEffect, useState, use, useCallback } from "react";
 import { notFound } from "next/navigation";
 import { useProgressStore } from "@/store/useProgressStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
 
 // difficulty → slug 매핑 (현재 무료 기본 팩 기준)
@@ -44,6 +45,8 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
   const { difficulty } = use(params);
   const { records, getBestRecord } = useProgressStore();
   const session = useAuthStore((s) => s.session);
+  const { t } = useTranslation();
+  const pk = t.pack;
   const [mounted, setMounted] = useState(false);
   const [pack, setPack] = useState<PackData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -199,8 +202,8 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
                 lock
               </span>
               <div>
-                <p className={`font-headline font-bold ${meta.textColor}`}>유료 패키지</p>
-                <p className={`text-xs ${meta.textColor} opacity-80`}>이 팩의 퍼즐을 플레이하려면 구매가 필요해요</p>
+                <p className={`font-headline font-bold ${meta.textColor}`}>{pk.paidGate}</p>
+                <p className={`text-xs ${meta.textColor} opacity-80`}>{pk.paidGateDesc}</p>
               </div>
               <span className={`ml-auto font-headline font-extrabold text-xl ${meta.textColor}`}>
                 ₩{pack.price.toLocaleString()}
@@ -208,20 +211,23 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
             </div>
             <div className="p-5 space-y-3">
               {pack.description && <p className="text-sm text-on-surface-variant">{pack.description}</p>}
-              <p className="text-sm text-on-surface-variant">총 {pack.puzzle_count}개 퍼즐 포함</p>
+              <p className="text-sm text-on-surface-variant">
+                원 {pack.puzzle_count}
+                {pk.totalPuzzles}
+              </p>
               {!session ? (
                 <Link
                   href="/login"
                   className="block w-full text-center bg-primary text-on-primary py-3 rounded-full font-headline font-bold hover:scale-105 active:scale-95 transition-all"
                 >
-                  로그인 후 구매하기
+                  {pk.loginToBuy}
                 </Link>
               ) : (
                 <button
                   disabled
                   className="w-full bg-primary text-on-primary py-3 rounded-full font-headline font-bold opacity-50 cursor-not-allowed"
                 >
-                  구매하기 (준비 중)
+                  {pk.buyComingSoon}
                 </button>
               )}
             </div>
@@ -243,7 +249,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
               <p className="text-2xl font-headline font-extrabold">
                 {clearedCount} / {packPuzzles.length}
               </p>
-              <p className="text-xs text-on-surface-variant">Puzzles Cleared</p>
+              <p className="text-xs text-on-surface-variant">{pk.puzzlesCleared}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 bg-surface-container-lowest rounded-xl shadow-pudding px-5 py-4 flex-1 w-full sm:w-auto">
@@ -259,7 +265,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
               <p className="text-2xl font-headline font-extrabold">
                 {totalStars} / {maxStars}
               </p>
-              <p className="text-xs text-on-surface-variant">Stars Earned</p>
+              <p className="text-xs text-on-surface-variant">{pk.starsEarned}</p>
             </div>
           </div>
         </section>
@@ -268,7 +274,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
         <section className="bg-surface-container-lowest rounded-xl shadow-pudding p-5 space-y-2">
           <p className="text-sm font-headline font-bold text-on-surface-variant">Pack Progress</p>
           <div className="flex justify-between text-xs text-on-surface-variant">
-            <span>Progress</span>
+            <span>{pk.progress}</span>
             <span>
               {clearedCount}/{packPuzzles.length}
             </span>
@@ -283,7 +289,7 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
 
         {/* Puzzle Grid */}
         <section className="bg-surface-container-lowest rounded-xl shadow-pudding p-5">
-          <h3 className="text-lg font-headline font-bold mb-4">Puzzles</h3>
+          <h3 className="text-lg font-headline font-bold mb-4">{pk.listTitle}</h3>
           {pack.price > 0 && !purchased ? (
             /* 유료 미구매 — 블러 처리된 잠금 그리드 */
             <div className="relative">

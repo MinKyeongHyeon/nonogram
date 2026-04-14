@@ -8,6 +8,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { supabase } from "@/lib/supabaseClient";
 import { playClear, haptic } from "@/lib/sound";
 import { useToast } from "@/components/Toast";
+import { useTranslation } from "@/hooks/useTranslation";
+import { calcStars } from "@/lib/puzzleUtils";
 import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
 
@@ -32,6 +34,8 @@ export default function ClearedModal() {
   const completeDailyChallenge = useProgressStore((s) => s.completeDailyChallenge);
   const session = useAuthStore((s) => s.session);
   const showToast = useToast((s) => s.show);
+  const { t } = useTranslation();
+  const cm = t.clearedModal;
   const recorded = useRef(false);
 
   useEffect(() => {
@@ -53,7 +57,7 @@ export default function ClearedModal() {
 
       // 로그인 상태면 서버에도 기록 저장
       if (session) {
-        const stars = timer < 60 ? 3 : timer < 180 ? 2 : 1;
+        const stars = currentPuzzle ? calcStars(timer, currentPuzzle.rows, currentPuzzle.cols) : 1;
         supabase.auth.getSession().then(({ data }) => {
           if (!data.session) return;
           fetch("/api/completions", {
@@ -153,8 +157,10 @@ export default function ClearedModal() {
         )}
 
         <div className="space-y-2">
-          <h2 className="text-2xl font-headline font-extrabold text-on-surface">Puzzle Cleared!</h2>
-          <p className="text-on-surface-variant">{currentPuzzle?.name ?? "Puzzle"} completed</p>
+          <h2 className="text-2xl font-headline font-extrabold text-on-surface">{cm.title}</h2>
+          <p className="text-on-surface-variant">
+            {currentPuzzle?.name ?? "Puzzle"} {cm.completed}
+          </p>
         </div>
 
         {/* Stats */}
@@ -162,19 +168,28 @@ export default function ClearedModal() {
           <div className="text-center">
             <span className="material-symbols-outlined text-tertiary text-xl">timer</span>
             <p className="text-lg font-headline font-bold text-on-surface">{formatTimer(timer)}</p>
-            <p className="text-xs text-on-surface-variant">Time</p>
+            <p className="text-xs text-on-surface-variant">{cm.time}</p>
           </div>
           <div className="text-center">
-            <span
-              className="material-symbols-outlined text-primary text-xl"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              star
-            </span>
-            <p className="text-lg font-headline font-bold text-on-surface">
-              {timer < 60 ? "★★★" : timer < 180 ? "★★" : "★"}
-            </p>
-            <p className="text-xs text-on-surface-variant">Stars</p>
+            <div className="flex justify-center gap-0.5">
+              {[1, 2, 3].map((n) => {
+                const earned = currentPuzzle ? calcStars(timer, currentPuzzle.rows, currentPuzzle.cols) : 1;
+                return (
+                  <span
+                    key={n}
+                    className="material-symbols-outlined text-xl"
+                    style={{
+                      fontVariationSettings: n <= earned ? "'FILL' 1" : "'FILL' 0",
+                      color: n <= earned ? "var(--color-primary)" : undefined,
+                      opacity: n <= earned ? 1 : 0.25,
+                    }}
+                  >
+                    star
+                  </span>
+                );
+              })}
+            </div>
+            <p className="text-xs text-on-surface-variant mt-1">{cm.stars}</p>
           </div>
         </div>
 
@@ -184,21 +199,21 @@ export default function ClearedModal() {
             onClick={reset}
             className="w-full bg-primary text-on-primary py-3.5 rounded-full font-headline font-bold shadow-soft-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            Play Again
+            {cm.playAgain}
           </button>
           {(sourcePackDifficulty ?? currentPuzzle?.difficulty) && (
             <Link
               href={`/pack/${sourcePackDifficulty ?? currentPuzzle?.difficulty}`}
               className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors text-center"
             >
-              Back to Package
+              {cm.backToPackage}
             </Link>
           )}
           <Link
             href="/"
             className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors text-center"
           >
-            Back to Home
+            {cm.backToHome}
           </Link>
         </div>
       </div>

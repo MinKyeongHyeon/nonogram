@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useProgressStore } from "@/store/useProgressStore";
 import { puzzles } from "@/data/puzzles";
+import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -18,6 +19,8 @@ function getDailyPuzzleId(dateStr: string): number {
 
 export default function CalendarPage() {
   const { dailyCompleted, streak } = useProgressStore();
+  const { t } = useTranslation();
+  const cal = t.calendar;
   const [mounted, setMounted] = useState(false);
   const [viewDate, setViewDate] = useState(() => new Date());
   useEffect(() => setMounted(true), []);
@@ -98,7 +101,7 @@ export default function CalendarPage() {
           >
             <span className="material-symbols-outlined text-on-surface">arrow_back</span>
           </Link>
-          <h1 className="text-xl font-headline font-bold">Daily Challenge</h1>
+          <h1 className="text-xl font-headline font-bold">{cal.title}</h1>
         </div>
       </header>
 
@@ -116,9 +119,9 @@ export default function CalendarPage() {
             </div>
             <div>
               <p className="text-2xl font-headline font-extrabold">
-                {streak} Day{streak !== 1 ? "s" : ""}
+                {streak} {streak !== 1 ? cal.streakPlural : cal.streak}
               </p>
-              <p className="text-xs text-on-surface-variant">Current Streak</p>
+              <p className="text-xs text-on-surface-variant">{cal.currentStreak}</p>
             </div>
           </div>
           <Link
@@ -128,7 +131,7 @@ export default function CalendarPage() {
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
               play_circle
             </span>
-            Play Today&apos;s Challenge
+            {cal.playToday}
           </Link>
         </section>
 

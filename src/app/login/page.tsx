@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useTranslation } from "@/hooks/useTranslation";
 import type { Provider } from "@supabase/supabase-js";
 
 function LoginContent() {
@@ -10,6 +11,8 @@ function LoginContent() {
   const router = useRouter();
   const returnTo = searchParams.get("returnTo") ?? "/";
   const needsLogin = searchParams.get("needsLogin") === "1";
+  const { t } = useTranslation();
+  const li = t.login;
 
   const [isLoading, setIsLoading] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +27,7 @@ function LoginContent() {
       },
     });
     if (error) {
-      setError("로그인 중 문제가 발생했어요. 다시 시도해주세요.");
+      setError(li.loginError);
       setIsLoading(null);
     }
   }
@@ -37,18 +40,18 @@ function LoginContent() {
           <span className="text-4xl">🍮</span>
         </div>
         <h1 className="text-3xl font-headline font-extrabold text-on-surface">Nonogram Play</h1>
-        <p className="text-sm text-on-surface-variant mt-1">귀여운 노노그램 퍼즐 게임</p>
+        <p className="text-sm text-on-surface-variant mt-1">{li.subtitle}</p>
       </div>
 
       {/* 로그인 카드 */}
       <div className="w-full max-w-sm bg-surface-container-lowest rounded-[2rem] shadow-pudding p-8 space-y-4">
         {needsLogin && (
           <div className="bg-secondary-container text-on-secondary-container rounded-xl px-4 py-3 text-sm text-center">
-            계속하려면 로그인이 필요합니다
+            {li.needsLogin}
           </div>
         )}
 
-        <h2 className="text-xl font-headline font-bold text-center">시작하기</h2>
+        <h2 className="text-xl font-headline font-bold text-center">{li.start}</h2>
 
         {error && <div className="bg-error/10 text-error rounded-xl px-4 py-3 text-sm text-center">{error}</div>}
 
@@ -63,7 +66,7 @@ function LoginContent() {
           ) : (
             <GoogleIcon />
           )}
-          Google로 시작하기
+          {li.googleLogin}
         </button>
 
         {/* 카카오 로그인 (준비 중) */}
@@ -72,9 +75,9 @@ function LoginContent() {
           className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl font-bold text-[#3C1E1E]/40 bg-[#FEE500]/30 cursor-not-allowed opacity-60"
         >
           <KakaoIcon />
-          카카오로 시작하기
+          {li.kakaoLogin}
           <span className="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full ml-1">
-            준비 중
+            {li.kakaoComingSoon}
           </span>
         </button>
 
@@ -89,7 +92,7 @@ function LoginContent() {
             onClick={() => router.push("/")}
             className="w-full mt-3 text-sm text-primary font-semibold hover:underline"
           >
-            로그인 없이 계속하기
+            {li.guestContinue}
           </button>
         </div>
       </div>

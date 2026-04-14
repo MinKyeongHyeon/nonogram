@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,8 +26,11 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 }
 
 export default function SettingsPage() {
-  const { sound, haptics, darkMode, toggleSound, toggleHaptics, toggleDarkMode } = useSettingsStore();
+  const { sound, haptics, darkMode, language, toggleSound, toggleHaptics, toggleDarkMode, setLanguage } =
+    useSettingsStore();
   const session = useAuthStore((s) => s.session);
+  const { t } = useTranslation();
+  const s = t.settings;
   const [mounted, setMounted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
@@ -96,7 +100,7 @@ export default function SettingsPage() {
           >
             <span className="material-symbols-outlined text-on-surface">arrow_back</span>
           </Link>
-          <h1 className="text-xl font-headline font-bold">Settings</h1>
+          <h1 className="text-xl font-headline font-bold">{s.title}</h1>
         </div>
       </header>
 
@@ -104,26 +108,55 @@ export default function SettingsPage() {
         {/* Preferences */}
         <section className="space-y-1">
           <h2 className="text-sm font-headline font-bold text-on-surface-variant uppercase tracking-widest px-1 mb-3">
-            Preferences
+            {s.preferences}
           </h2>
           <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
             <SettingRow
               icon="volume_up"
-              label="Sound Effects"
-              description="Play sounds on actions"
+              label={s.soundEffects}
+              description={s.soundEffectsDesc}
               trailing={<Toggle on={sound} onToggle={toggleSound} />}
             />
             <SettingRow
               icon="vibration"
-              label="Haptics"
-              description="Vibration feedback on mobile"
+              label={s.haptics}
+              description={s.hapticsDesc}
               trailing={<Toggle on={haptics} onToggle={toggleHaptics} />}
             />
             <SettingRow
               icon="dark_mode"
-              label="Dark Mode"
-              description="Switch to dark theme"
+              label={s.darkMode}
+              description={s.darkModeDesc}
               trailing={<Toggle on={darkMode} onToggle={toggleDarkMode} />}
+            />
+            <SettingRow
+              icon="translate"
+              label={s.language}
+              description={s.languageDesc}
+              trailing={
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setLanguage("ko")}
+                    className={`px-3 py-1 rounded-full text-xs font-headline font-bold transition-colors ${
+                      language === "ko"
+                        ? "bg-primary text-on-primary"
+                        : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                    }`}
+                  >
+                    KO
+                  </button>
+                  <button
+                    onClick={() => setLanguage("en")}
+                    className={`px-3 py-1 rounded-full text-xs font-headline font-bold transition-colors ${
+                      language === "en"
+                        ? "bg-primary text-on-primary"
+                        : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+              }
             />
           </div>
         </section>
@@ -131,17 +164,17 @@ export default function SettingsPage() {
         {/* Account */}
         <section className="space-y-1">
           <h2 className="text-sm font-headline font-bold text-on-surface-variant uppercase tracking-widest px-1 mb-3">
-            Account
+            {s.account}
           </h2>
           <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
             <Link href="/profile">
-              <SettingRow icon="person" label="Profile Details" description="View and edit your profile" chevron />
+              <SettingRow icon="person" label={s.profileDetails} description={s.profileDetailsDesc} chevron />
             </Link>
             {session ? (
               <button onClick={handleLogOut} disabled={isLoggingOut} className="w-full text-left disabled:opacity-60">
                 <SettingRow
                   icon="logout"
-                  label="Log Out"
+                  label={s.logOut}
                   description={session.user.email ?? session.user.id}
                   trailing={
                     isLoggingOut ? (
@@ -152,7 +185,7 @@ export default function SettingsPage() {
               </button>
             ) : (
               <Link href="/login">
-                <SettingRow icon="login" label="Log In" description="Sign in to sync your progress" chevron />
+                <SettingRow icon="login" label={s.logIn} description={s.logInDesc} chevron />
               </Link>
             )}
           </div>
@@ -161,26 +194,26 @@ export default function SettingsPage() {
         {/* Support */}
         <section className="space-y-1">
           <h2 className="text-sm font-headline font-bold text-on-surface-variant uppercase tracking-widest px-1 mb-3">
-            Support
+            {s.support}
           </h2>
           <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
             <SettingRow
               icon="mail"
-              label="Contact Us"
-              description="Get help or send feedback"
+              label={s.contactUs}
+              description={s.contactUsDesc}
               trailing={
                 <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
-                  Coming Soon
+                  {s.comingSoon}
                 </span>
               }
             />
             <SettingRow
               icon="shield"
-              label="Privacy Policy"
-              description="How we handle your data"
+              label={s.privacyPolicy}
+              description={s.privacyPolicyDesc}
               trailing={
                 <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
-                  Coming Soon
+                  {s.comingSoon}
                 </span>
               }
             />
@@ -188,7 +221,7 @@ export default function SettingsPage() {
         </section>
 
         {/* App Info */}
-        <p className="text-center text-xs text-on-surface-variant/60 pt-4">Nonogram Play v0.1.0</p>
+        <p className="text-center text-xs text-on-surface-variant/60 pt-4">{s.version}</p>
       </div>
     </main>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
 
 interface LeaderEntry {
@@ -16,6 +17,8 @@ interface LeaderEntry {
 
 export default function LeaderboardPage() {
   const session = useAuthStore((s) => s.session);
+  const { t } = useTranslation();
+  const lb = t.leaderboard;
   const [tab, setTab] = useState<"all" | "daily">("all");
   const [entries, setEntries] = useState<LeaderEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +47,7 @@ export default function LeaderboardPage() {
           const map = new Map<string, { stars: number; name: string; avatar: string }>();
           for (const row of raw) {
             const existing = map.get(row.user_id);
-            const name = row.profiles?.nickname ?? "익명";
+            const name = row.profiles?.nickname ?? t.common.anonymous;
             const avatar = row.profiles?.avatar_url ?? "🧩";
             if (existing) {
               existing.stars += row.stars;
@@ -68,7 +71,7 @@ export default function LeaderboardPage() {
           // daily: time_sec 오름차순
           const sorted = raw.map((row, i) => ({
             rank: i + 1,
-            name: row.profiles?.nickname ?? "익명",
+            name: row.profiles?.nickname ?? t.common.anonymous,
             avatar: row.profiles?.avatar_url ?? "🧩",
             cleared: 1,
             stars: row.stars,
@@ -157,7 +160,7 @@ export default function LeaderboardPage() {
           >
             <span className="material-symbols-outlined text-on-surface">arrow_back</span>
           </Link>
-          <h1 className="text-xl font-headline font-bold">Leaderboard</h1>
+          <h1 className="text-xl font-headline font-bold">{lb.title}</h1>
         </div>
       </header>
 
@@ -170,7 +173,7 @@ export default function LeaderboardPage() {
               tab === "all" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant"
             }`}
           >
-            All Time
+            {lb.allTime}
           </button>
           <button
             onClick={() => setTab("daily")}
@@ -178,7 +181,7 @@ export default function LeaderboardPage() {
               tab === "daily" ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant"
             }`}
           >
-            Daily
+            {lb.daily}
           </button>
         </div>
 
@@ -187,11 +190,11 @@ export default function LeaderboardPage() {
           <div className="flex items-center gap-3 bg-surface-container-low border border-outline-variant/40 rounded-xl px-4 py-3 text-sm">
             <span className="material-symbols-outlined text-primary text-xl">emoji_events</span>
             <p className="flex-1 text-on-surface-variant">
-              랭킹에 등재되려면{" "}
+              {lb.loginPrompt}{" "}
               <Link href="/login" className="text-primary font-semibold underline underline-offset-2">
-                로그인
+                {lb.loginLink}
               </Link>
-              하세요.
+              {lb.loginPromptSuffix}
             </p>
           </div>
         )}
@@ -200,7 +203,7 @@ export default function LeaderboardPage() {
         {isLoading && (
           <div className="flex flex-col items-center gap-4 py-16 text-on-surface-variant">
             <span className="material-symbols-outlined text-4xl animate-spin">progress_activity</span>
-            <p className="text-sm">불러오는 중...</p>
+            <p className="text-sm">{lb.loading}</p>
           </div>
         )}
 
@@ -213,7 +216,7 @@ export default function LeaderboardPage() {
               onClick={() => fetchLeaderboard(tab)}
               className="mt-1 px-5 py-2 bg-primary text-on-primary rounded-full text-sm font-semibold"
             >
-              다시 시도
+              {lb.retry}
             </button>
           </div>
         )}
@@ -222,7 +225,7 @@ export default function LeaderboardPage() {
         {!isLoading && !error && entries.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-16 text-center text-on-surface-variant">
             <span className="material-symbols-outlined text-4xl">leaderboard</span>
-            <p className="text-sm">아직 랭킹 데이터가 없어요.</p>
+            <p className="text-sm">{lb.noData}</p>
           </div>
         )}
 

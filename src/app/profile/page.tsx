@@ -5,6 +5,7 @@ import { useProgressStore } from "@/store/useProgressStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/components/Toast";
+import { useTranslation } from "@/hooks/useTranslation";
 import { puzzles } from "@/data/puzzles";
 import Link from "next/link";
 
@@ -69,6 +70,8 @@ export default function ProfilePage() {
   const { getTotalStars, streak, records } = useProgressStore();
   const session = useAuthStore((s) => s.session);
   const showToast = useToast((s) => s.show);
+  const { t } = useTranslation();
+  const pr = t.profile;
   const [mounted, setMounted] = useState(false);
   const [profileData, setProfileData] = useState<{ nickname: string | null; avatar_url: string | null } | null>(null);
   const [isEditingNick, setIsEditingNick] = useState(false);
@@ -218,7 +221,7 @@ export default function ProfilePage() {
           >
             <span className="material-symbols-outlined text-on-surface">arrow_back</span>
           </Link>
-          <h1 className="text-xl font-headline font-bold">My Profile</h1>
+          <h1 className="text-xl font-headline font-bold">{pr.title}</h1>
         </div>
       </header>
 
@@ -292,22 +295,22 @@ export default function ProfilePage() {
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             icon="extension"
-            label="Cleared"
+            label={pr.puzzlesCleared}
             value={`${totalCleared}/${totalPuzzles || "…"}`}
             color="bg-tertiary-container"
             iconColor="text-tertiary"
           />
           <StatCard
             icon="star"
-            label="Stars"
+            label={pr.starsEarned}
             value={String(totalStars)}
             color="bg-secondary-container"
             iconColor="text-secondary"
           />
           <StatCard
             icon="local_fire_department"
-            label="Streak"
-            value={`${streak}d`}
+            label={pr.streak}
+            value={`${streak}${pr.days}`}
             color="bg-primary-container"
             iconColor="text-primary"
           />
@@ -323,13 +326,13 @@ export default function ProfilePage() {
         {/* Recent Activity */}
         <section className="space-y-3">
           <h3 className="text-sm font-headline font-bold text-on-surface-variant uppercase tracking-widest px-1">
-            Recent Activity
+            {pr.recentActivity}
           </h3>
           <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
             {records.length === 0 ? (
               <div className="px-5 py-8 text-center text-on-surface-variant">
                 <span className="material-symbols-outlined text-3xl text-outline-variant block mb-2">history</span>
-                No puzzles cleared yet. Start playing!
+                <p className="text-sm text-on-surface-variant">{pr.noActivity}</p>
               </div>
             ) : (
               [...records]
@@ -365,7 +368,7 @@ export default function ProfilePage() {
         {/* Achievements */}
         <section className="space-y-3">
           <h3 className="text-sm font-headline font-bold text-on-surface-variant uppercase tracking-widest px-1">
-            Achievements
+            {pr.achievements}
           </h3>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {achievements.map((a) => {

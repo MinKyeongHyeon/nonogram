@@ -54,6 +54,22 @@ export function generateCluesFromSolution(solution: number[][]): Clues {
 }
 
 /**
+ * 퍼즐 크기(셀 수)에 따른 별점 시간 임계값을 반환합니다.
+ * gold: cells × 1.5초 이내 → ★★★
+ * silver: cells × 3초 이내 → ★★
+ * 그 외 → ★
+ */
+export function getStarThresholds(rows: number, cols: number): { gold: number; silver: number } {
+  const cells = rows * cols;
+  return { gold: Math.round(cells * 1.5), silver: cells * 3 };
+}
+
+export function calcStars(timer: number, rows: number, cols: number): number {
+  const { gold, silver } = getStarThresholds(rows, cols);
+  return timer <= gold ? 3 : timer <= silver ? 2 : 1;
+}
+
+/**
  * 브라우저 환경에서 이미지 파일(File 객체)과 이름을 입력받아
  * 픽셀 데이터를 분석한 뒤 즉시 완성된 Puzzle 객체(JSON)를 반환합니다.
  * @param imageFile - 업로드된 이미지 파일 객체

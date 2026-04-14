@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { StarsWon, PackProgress } from "@/components/HomeStats";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { useTranslation } from "@/hooks/useTranslation";
 import type { PackageSummary } from "@/types/puzzle";
 
 interface LeaderEntry {
@@ -49,6 +51,8 @@ const DIFF_META: Record<string, { color: string; textColor: string; barColor: st
 
 export default function Home() {
   const session = useAuthStore((s) => s.session);
+  const { language, setLanguage } = useSettingsStore();
+  const { t } = useTranslation();
   const [packs, setPacks] = useState<PackageSummary[]>([]);
   const [loadingPacks, setLoadingPacks] = useState(true);
   const [firstPuzzleId, setFirstPuzzleId] = useState<number | null>(null);
@@ -116,22 +120,29 @@ export default function Home() {
               href="/"
               className="text-primary font-headline font-bold border-b-4 border-primary-container pb-1 text-base tracking-tight"
             >
-              Games
+              {t.nav.games}
             </Link>
             <Link
               href="/calendar"
               className="text-on-surface-variant font-headline font-medium text-base tracking-tight hover:text-primary transition-colors"
             >
-              Daily Challenge
+              {t.nav.dailyChallenge}
             </Link>
             <Link
               href="/leaderboard"
               className="text-on-surface-variant font-headline font-medium text-base tracking-tight hover:text-primary transition-colors"
             >
-              Leaderboard
+              {t.nav.leaderboard}
             </Link>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setLanguage(language === "ko" ? "en" : "ko")}
+              className="hidden md:flex items-center px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-headline font-bold hover:bg-surface-container-high transition-colors"
+              aria-label="Toggle language"
+            >
+              {language === "ko" ? "EN" : "KO"}
+            </button>
             <Link href="/settings" className="text-primary hover:opacity-80 transition-opacity">
               <span className="material-symbols-outlined">settings</span>
             </Link>
@@ -153,23 +164,18 @@ export default function Home() {
               <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
                 local_fire_department
               </span>
-              Hot!
+              {t.home.badge}
             </div>
             <h1 className="text-5xl md:text-6xl font-headline font-extrabold leading-tight tracking-tighter">
-              Play Nonogram
+              {t.home.heroTitle}
             </h1>
-            <p className="text-on-surface-variant text-lg max-w-md leading-relaxed">
-              Dive into logic puzzles. Sharp brain, soft aesthetic.
-            </p>
+            <p className="text-on-surface-variant text-lg max-w-md leading-relaxed">{t.home.heroDesc}</p>
             <div className="flex gap-4">
               <Link
-                href={firstPuzzleId ? `/puzzle/${firstPuzzleId}` : "/pack/easy"}
-                aria-disabled={loadingPacks}
-                className={`bg-primary text-on-primary px-10 py-5 rounded-full text-lg font-bold shadow-pudding-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-3 ${
-                  loadingPacks ? "opacity-50 pointer-events-none" : ""
-                }`}
+                href="/howtoplay"
+                className="bg-primary text-on-primary px-10 py-5 rounded-full text-lg font-bold shadow-pudding-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
               >
-                Play Now
+                {t.home.playNow}
                 <span className="material-symbols-outlined">play_circle</span>
               </Link>
             </div>
@@ -209,7 +215,7 @@ export default function Home() {
               <p className="text-2xl font-headline font-extrabold text-on-surface">
                 {loadingPacks ? "…" : packs.reduce((s, p) => s + p.puzzle_count, 0)}
               </p>
-              <p className="text-sm text-on-surface-variant">Total Puzzles</p>
+              <p className="text-sm text-on-surface-variant">{t.home.totalPuzzles}</p>
             </div>
           </div>
           <div className="bg-surface-container-lowest p-5 rounded-xl shadow-pudding border border-outline-variant/10 flex items-center gap-4">
@@ -222,7 +228,7 @@ export default function Home() {
               <p className="text-2xl font-headline font-extrabold text-on-surface">
                 <StarsWon />
               </p>
-              <p className="text-sm text-on-surface-variant">Stars Won</p>
+              <p className="text-sm text-on-surface-variant">{t.home.starsWon}</p>
             </div>
           </div>
           <Link
@@ -235,8 +241,8 @@ export default function Home() {
               </span>
             </div>
             <div>
-              <p className="text-lg font-headline font-bold text-on-surface">Daily Challenge</p>
-              <p className="text-sm text-on-surface-variant">Today&apos;s puzzle awaits!</p>
+              <p className="text-lg font-headline font-bold text-on-surface">{t.home.dailyChallengeTitle}</p>
+              <p className="text-sm text-on-surface-variant">{t.home.dailyChallengeDesc}</p>
             </div>
             <span className="material-symbols-outlined text-primary ml-auto">arrow_forward</span>
           </Link>
@@ -245,8 +251,8 @@ export default function Home() {
         {/* Level Packs */}
         <section className="space-y-8">
           <div>
-            <h2 className="text-3xl font-headline font-extrabold tracking-tight">Level Packs</h2>
-            <p className="text-on-surface-variant mt-1">Choose your flavor and difficulty</p>
+            <h2 className="text-3xl font-headline font-extrabold tracking-tight">{t.home.levelPacks}</h2>
+            <p className="text-on-surface-variant mt-1">{t.home.levelPacksDesc}</p>
           </div>
 
           {loadingPacks ? (
@@ -297,7 +303,9 @@ export default function Home() {
                       );
                     })()}
                     <h4 className="text-xl font-headline font-bold">{pack.title}</h4>
-                    <p className="text-on-surface-variant">{pack.puzzle_count} Puzzles</p>
+                    <p className="text-on-surface-variant">
+                      {pack.puzzle_count} {t.home.puzzles}
+                    </p>
                     {pack.description && (
                       <p className="text-sm text-on-surface-variant line-clamp-2">{pack.description}</p>
                     )}
@@ -315,14 +323,14 @@ export default function Home() {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-headline font-extrabold tracking-tight">Top Rankings</h2>
-              <p className="text-on-surface-variant mt-1">Who&apos;s leading the board?</p>
+              <h2 className="text-3xl font-headline font-extrabold tracking-tight">{t.home.topRankings}</h2>
+              <p className="text-on-surface-variant mt-1">{t.home.topRankingsDesc}</p>
             </div>
             <Link
               href="/leaderboard"
               className="flex items-center gap-1 text-primary font-semibold text-sm hover:underline"
             >
-              View All
+              {t.home.viewAll}
               <span className="material-symbols-outlined text-base">arrow_forward</span>
             </Link>
           </div>
@@ -350,7 +358,7 @@ export default function Home() {
               </div>
             </div>
           ) : leaderEntries.length === 0 ? (
-            <div className="text-center py-12 text-on-surface-variant text-sm">아직 랭킹 데이터가 없어요.</div>
+            <div className="text-center py-12 text-on-surface-variant text-sm">{t.home.noRankingData}</div>
           ) : (
             <div className="space-y-4">
               {/* Podium (top 3) */}
@@ -423,12 +431,12 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="pb-32 md:pb-10 pt-6 text-center text-xs text-on-surface-variant/60 space-x-4">
-        <span>© 2026 Nonogram Play</span>
+        <span>{t.home.copyright}</span>
         <Link href="/privacy" className="hover:text-primary transition-colors">
-          Privacy Policy
+          {t.home.privacy}
         </Link>
         <Link href="/terms" className="hover:text-primary transition-colors">
-          Terms of Service
+          {t.home.terms}
         </Link>
       </footer>
 
@@ -441,19 +449,19 @@ export default function Home() {
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
             home
           </span>
-          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">Home</span>
+          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">{t.nav.home}</span>
         </Link>
         <Link href="/leaderboard" className="flex flex-col items-center text-on-surface-variant px-5 py-2">
           <span className="material-symbols-outlined">emoji_events</span>
-          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">Rank</span>
+          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">{t.nav.rank}</span>
         </Link>
         <Link href="/profile" className="flex flex-col items-center text-on-surface-variant px-5 py-2">
           <span className="material-symbols-outlined">person</span>
-          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">Me</span>
+          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">{t.nav.me}</span>
         </Link>
         <Link href="/settings" className="flex flex-col items-center text-on-surface-variant px-5 py-2">
           <span className="material-symbols-outlined">settings</span>
-          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">Sets</span>
+          <span className="font-headline text-[10px] font-bold uppercase tracking-widest">{t.nav.settings}</span>
         </Link>
       </nav>
     </main>

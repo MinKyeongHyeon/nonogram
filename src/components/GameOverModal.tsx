@@ -2,10 +2,13 @@
 
 import React from "react";
 import { usePuzzleStore } from "@/store/usePuzzleStore";
+import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
 
 export default function GameOverModal() {
   const { currentPuzzle, reset } = usePuzzleStore();
+  const { t } = useTranslation();
+  const go = t.gameOverModal;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/40 backdrop-blur-sm">
@@ -18,9 +21,9 @@ export default function GameOverModal() {
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-2xl font-headline font-extrabold text-on-surface">Game Over</h2>
+          <h2 className="text-2xl font-headline font-extrabold text-on-surface">{go.title}</h2>
           <p className="text-on-surface-variant">
-            You ran out of lives on <span className="font-semibold">{currentPuzzle?.name ?? "this puzzle"}</span>
+            {go.desc} <span className="font-semibold">{currentPuzzle?.name ?? "this puzzle"}</span>
           </p>
         </div>
 
@@ -43,13 +46,13 @@ export default function GameOverModal() {
             onClick={reset}
             className="w-full bg-primary text-on-primary py-3.5 rounded-full font-headline font-bold shadow-soft-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            Try Again
+            {go.tryAgain}
           </button>
           <Link
             href="/"
             className="w-full bg-surface-container-low text-on-surface py-3.5 rounded-full font-headline font-semibold hover:bg-surface-container transition-colors text-center"
           >
-            Back to Home
+            {go.backToHome}
           </Link>
         </div>
       </div>
