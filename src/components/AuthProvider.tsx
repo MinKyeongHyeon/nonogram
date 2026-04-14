@@ -45,9 +45,7 @@ async function uploadLocalToServer(accessToken: string) {
   if (localRecords.length === 0) return;
 
   // 서버에 이미 있는 puzzle_id 목록 조회
-  const { data: existing } = await supabase
-    .from("puzzle_completions")
-    .select("puzzle_id");
+  const { data: existing } = await supabase.from("puzzle_completions").select("puzzle_id");
 
   const existingIds = new Set((existing ?? []).map((r) => Number(r.puzzle_id)));
 
@@ -84,9 +82,7 @@ export default function AuthProvider() {
       setLoading(false);
       // 앱 로드 시 이미 로그인 상태면 동기화
       if (data.session) {
-        uploadLocalToServer(data.session.access_token).then(() =>
-          syncCompletionsToLocal(data.session!.access_token)
-        );
+        uploadLocalToServer(data.session.access_token).then(() => syncCompletionsToLocal(data.session!.access_token));
       }
     });
 
@@ -97,9 +93,7 @@ export default function AuthProvider() {
       setLoading(false);
       // 로그인 시 서버 기록을 로컬에 병합
       if (event === "SIGNED_IN" && session) {
-        uploadLocalToServer(session.access_token).then(() =>
-          syncCompletionsToLocal(session.access_token)
-        );
+        uploadLocalToServer(session.access_token).then(() => syncCompletionsToLocal(session.access_token));
       }
     });
 

@@ -1,9 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { StarsWon, PackProgress } from "@/components/HomeStats";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { PackageSummary } from "@/types/puzzle";
+
+interface LeaderEntry {
+  rank: number;
+  name: string;
+  avatar: string;
+  stars: number;
+  isMe: boolean;
+}
+
+const PACK_COVER: Record<string, string> = {
+  "free-easy": "/covers/starter_pack.png",
+  "free-medium": "/covers/sweet.png",
+  "free-hard": "/covers/challenge.png",
+};
+
+function getPackCover(slug: string): string | null {
+  return PACK_COVER[slug] ?? null;
+}
 
 const DIFF_META: Record<string, { color: string; textColor: string; barColor: string; icon: string }> = {
   easy: {
@@ -28,9 +48,48 @@ const DIFF_META: Record<string, { color: string; textColor: string; barColor: st
 };
 
 export default function Home() {
+  const session = useAuthStore((s) => s.session);
   const [packs, setPacks] = useState<PackageSummary[]>([]);
   const [loadingPacks, setLoadingPacks] = useState(true);
   const [firstPuzzleId, setFirstPuzzleId] = useState<number | null>(null);
+  const [leaderEntries, setLeaderEntries] = useState<LeaderEntry[]>([]);
+  const [leaderLoading, setLeaderLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/leaderboard?tab=all", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((json) => {
+        if (!json.ok) return;
+        const raw = json.data as Array<{
+          user_id: string;
+          stars: number;
+          profiles: { nickname: string | null; avatar_url: string | null } | null;
+        }>;
+        const map = new Map<string, { stars: number; name: string; avatar: string }>();
+        for (const row of raw) {
+          const existing = map.get(row.user_id);
+          const name = row.profiles?.nickname ?? "익명";
+          const avatar = row.profiles?.avatar_url ?? "🧩";
+          if (existing) {
+            existing.stars += row.stars;
+          } else {
+            map.set(row.user_id, { stars: row.stars, name, avatar });
+          }
+        }
+        const sorted = [...map.entries()]
+          .sort((a, b) => b[1].stars - a[1].stars)
+          .slice(0, 7)
+          .map(([uid, v], i) => ({
+            rank: i + 1,
+            name: v.name,
+            avatar: v.avatar,
+            stars: v.stars,
+            isMe: uid === session?.user?.id,
+          }));
+        setLeaderEntries(sorted);
+      })
+      .finally(() => setLeaderLoading(false));
+  }, [session?.user?.id]);
 
   useEffect(() => {
     fetch("/api/packages")
@@ -97,10 +156,10 @@ export default function Home() {
               Hot!
             </div>
             <h1 className="text-5xl md:text-6xl font-headline font-extrabold leading-tight tracking-tighter">
-              Ready to solve <br /> something <span className="text-primary italic">sweet?</span>
+              Play Nonogram
             </h1>
             <p className="text-on-surface-variant text-lg max-w-md leading-relaxed">
-              Dive into our collection of candy-coated logic puzzles. Sharp brain, soft aesthetic.
+              Dive into logic puzzles. Sharp brain, soft aesthetic.
             </p>
             <div className="flex gap-4">
               <Link
@@ -215,17 +274,28 @@ export default function Home() {
                     href={`/pack/${diff}`}
                     className="bg-surface-container-lowest p-6 rounded-xl space-y-4 shadow-pudding border border-outline-variant/10 hover:-translate-y-2 transition-all"
                   >
-                    <div className={`aspect-video ${meta.color} rounded-lg flex items-center justify-center relative`}>
-                      <span className="text-5xl">{pack.cover_emoji}</span>
-                      <div className="absolute top-3 left-3 bg-surface-container-lowest/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold capitalize">
-                        {diff}
-                      </div>
-                      {pack.price > 0 && (
-                        <div className="absolute top-3 right-3 bg-primary text-on-primary px-3 py-1 rounded-full text-xs font-bold">
-                          ₩{pack.price.toLocaleString()}
+                    {(() => {
+                      const cover = getPackCover(pack.slug);
+                      return (
+                        <div className="aspect-video rounded-lg relative overflow-hidden">
+                          {cover ? (
+                            <Image src={cover} alt={pack.title} fill className="object-cover" />
+                          ) : (
+                            <div className={`w-full h-full ${meta.color} flex items-center justify-center`}>
+                              <span className="text-5xl">{pack.cover_emoji}</span>
+                            </div>
+                          )}
+                          <div className="absolute top-3 left-3 bg-surface-container-lowest/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold capitalize">
+                            {diff}
+                          </div>
+                          {pack.price > 0 && (
+                            <div className="absolute top-3 right-3 bg-primary text-on-primary px-3 py-1 rounded-full text-xs font-bold">
+                              ₩{pack.price.toLocaleString()}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                     <h4 className="text-xl font-headline font-bold">{pack.title}</h4>
                     <p className="text-on-surface-variant">{pack.puzzle_count} Puzzles</p>
                     {pack.description && (
@@ -237,6 +307,115 @@ export default function Home() {
                   </Link>
                 );
               })}
+            </div>
+          )}
+        </section>
+
+        {/* Top Rankings */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-headline font-extrabold tracking-tight">Top Rankings</h2>
+              <p className="text-on-surface-variant mt-1">Who&apos;s leading the board?</p>
+            </div>
+            <Link
+              href="/leaderboard"
+              className="flex items-center gap-1 text-primary font-semibold text-sm hover:underline"
+            >
+              View All
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </Link>
+          </div>
+
+          {leaderLoading ? (
+            <div className="space-y-4">
+              <div className="flex items-end justify-center gap-3 pt-4">
+                {["h-20", "h-28", "h-16"].map((h, i) => (
+                  <div key={i} className="flex flex-col items-center gap-2 flex-1 max-w-[100px]">
+                    <div className="w-12 h-12 rounded-full bg-surface-container animate-shimmer" />
+                    <div className="w-14 h-3 rounded-full bg-surface-container animate-shimmer" />
+                    <div className={`w-full ${h} rounded-t-xl bg-surface-container animate-shimmer`} />
+                  </div>
+                ))}
+              </div>
+              <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-3">
+                    <div className="w-8 h-4 rounded bg-surface-container animate-shimmer" />
+                    <div className="w-9 h-9 rounded-full bg-surface-container animate-shimmer" />
+                    <div className="flex-1 h-4 rounded bg-surface-container animate-shimmer" />
+                    <div className="w-12 h-4 rounded bg-surface-container animate-shimmer" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : leaderEntries.length === 0 ? (
+            <div className="text-center py-12 text-on-surface-variant text-sm">아직 랭킹 데이터가 없어요.</div>
+          ) : (
+            <div className="space-y-4">
+              {/* Podium (top 3) */}
+              {leaderEntries.length >= 3 && (
+                <div className="flex items-end justify-center gap-3 pt-4">
+                  {[leaderEntries[1], leaderEntries[0], leaderEntries[2]].filter(Boolean).map((entry, i) => {
+                    const heights = ["h-20", "h-28", "h-16"];
+                    const colors = ["bg-secondary-container", "bg-primary-container", "bg-tertiary-container"];
+                    const textColors = ["text-secondary", "text-primary", "text-tertiary"];
+                    return (
+                      <div key={entry.rank} className="flex flex-col items-center gap-2 flex-1 max-w-[100px]">
+                        <div className="relative">
+                          <div
+                            className={`w-12 h-12 rounded-full ${colors[i]} flex items-center justify-center text-xl shadow-pudding ${entry.isMe ? "ring-2 ring-primary" : ""}`}
+                          >
+                            {entry.avatar}
+                          </div>
+                          {i === 1 && (
+                            <span
+                              className="material-symbols-outlined absolute -top-3 left-1/2 -translate-x-1/2 text-primary text-xl"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              emoji_events
+                            </span>
+                          )}
+                        </div>
+                        <p
+                          className={`text-xs font-headline font-bold truncate max-w-full ${entry.isMe ? "text-primary" : ""}`}
+                        >
+                          {entry.name}
+                        </p>
+                        <p className="text-[10px] text-on-surface-variant">{entry.stars}★</p>
+                        <div
+                          className={`w-full ${heights[i]} ${colors[i]} rounded-t-xl flex items-start justify-center pt-2`}
+                        >
+                          <span className={`text-sm font-headline font-extrabold ${textColors[i]}`}>{entry.rank}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 4위~ 목록 */}
+              {leaderEntries.slice(3).length > 0 && (
+                <div className="bg-surface-container-lowest rounded-xl shadow-pudding divide-y divide-outline-variant/20">
+                  {leaderEntries.slice(3).map((entry) => (
+                    <div
+                      key={entry.rank}
+                      className={`flex items-center gap-4 px-5 py-3 ${entry.isMe ? "bg-primary-container/10" : ""}`}
+                    >
+                      <span className="text-sm font-headline font-bold text-on-surface-variant w-8">{entry.rank}</span>
+                      <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-lg">
+                        {entry.avatar}
+                      </div>
+                      <p
+                        className={`flex-1 text-sm font-semibold truncate ${entry.isMe ? "text-primary font-bold" : ""}`}
+                      >
+                        {entry.name}
+                      </p>
+                      <span className="text-xs text-on-surface-variant font-mono">{entry.stars}★</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </section>

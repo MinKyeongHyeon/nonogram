@@ -76,7 +76,7 @@ export default function ProfilePage() {
   const [isSavingNick, setIsSavingNick] = useState(false);
   const [totalPuzzles, setTotalPuzzles] = useState<number>(0);
 
-    useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     fetch("/api/packages")
