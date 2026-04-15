@@ -330,8 +330,6 @@ export default function PackPage({ params }: { params: Promise<{ difficulty: str
                   >
                     <span className="font-headline text-xs text-center leading-tight px-1 truncate w-full">
                       {displayName}
-                      <br></br>
-                      {difficulty}
                     </span>
                     {isCleared && (
                       <span
