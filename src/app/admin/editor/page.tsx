@@ -37,7 +37,12 @@ export default function AdminEditorPage() {
   const [painting, setPainting] = useState<boolean | null>(null);
   const [history, setHistory] = useState<number[][][]>(() => [makeEmptyGrid(5)]);
   const [historyIdx, setHistoryIdx] = useState(0);
-  const [validation, setValidation] = useState<{ valid: boolean; reason?: string } | null>(null);
+  const [validation, setValidation] = useState<{
+    valid: boolean;
+    reason?: string;
+    invalidRows?: number[];
+    invalidCols?: number[];
+  } | null>(null);
   const [difficultyHint, setDifficultyHint] = useState<Difficulty | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -480,52 +485,79 @@ export default function AdminEditorPage() {
             <div className="flex">
               <div className="w-12 shrink-0" />
               <div className="flex">
-                {clues.cols.map((colClue, cIdx) => (
-                  <div
-                    key={cIdx}
-                    className="w-9 h-16 flex flex-col items-center justify-end pb-1 border-b-2 border-outline-variant/30"
-                  >
-                    {colClue.map((v, i) => (
-                      <span key={i} className="text-[10px] font-headline font-bold leading-tight text-on-surface">
-                        {v}
-                      </span>
-                    ))}
-                  </div>
-                ))}
+                {clues.cols.map((colClue, cIdx) => {
+                  const colInvalid = !!validation && !!validation.invalidCols?.includes(cIdx);
+                  return (
+                    <div
+                      key={cIdx}
+                      className={`w-9 h-16 flex flex-col items-center justify-end pb-1 border-b-2 border-outline-variant/30 ${
+                        colInvalid ? "ring-2 ring-error/60 rounded-sm" : ""
+                      }`}
+                    >
+                      {colClue.map((v, i) => (
+                        <span
+                          key={i}
+                          className={`text-[10px] font-headline font-bold leading-tight ${
+                            colInvalid ? "text-error" : "text-on-surface"
+                          }`}
+                        >
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Rows */}
-            {grid.map((row, rIdx) => (
-              <div key={rIdx} className="flex">
-                {/* Row clues */}
-                <div className="w-12 shrink-0 flex items-center justify-end pr-1.5 border-r-2 border-outline-variant/30">
-                  <div className="flex gap-0.5">
-                    {clues.rows[rIdx].map((v, i) => (
-                      <span key={i} className="text-[10px] font-headline font-bold text-on-surface">
-                        {v}
-                      </span>
-                    ))}
+            {grid.map((row, rIdx) => {
+              const rowInvalid = !!validation && !!validation.invalidRows?.includes(rIdx);
+              return (
+                <div key={rIdx} className="flex">
+                  {/* Row clues */}
+                  <div
+                    className={`w-12 shrink-0 flex items-center justify-end pr-1.5 border-r-2 border-outline-variant/30 ${
+                      rowInvalid ? "ring-2 ring-error/60 rounded-sm" : ""
+                    }`}
+                  >
+                    <div className="flex gap-0.5">
+                      {clues.rows[rIdx].map((v, i) => (
+                        <span
+                          key={i}
+                          className={`text-[10px] font-headline font-bold ${
+                            rowInvalid ? "text-error" : "text-on-surface"
+                          }`}
+                        >
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Cells */}
+                  <div className="flex">
+                    {row.map((cell, cIdx) => {
+                      const cellInvalid =
+                        !!validation &&
+                        (!!validation.invalidRows?.includes(rIdx) || !!validation.invalidCols?.includes(cIdx));
+                      return (
+                        <div
+                          key={cIdx}
+                          onMouseDown={() => handleCellDown(rIdx, cIdx)}
+                          onMouseEnter={() => handleCellEnter(rIdx, cIdx)}
+                          className={`w-9 h-9 border border-outline-variant/20 cursor-crosshair transition-colors rounded-sm ${
+                            cell === 1
+                              ? "bg-primary-container shadow-inner"
+                              : "bg-surface-container-lowest hover:bg-primary-container/20"
+                          } ${cellInvalid ? "ring-2 ring-error/40" : ""}`}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* Cells */}
-                <div className="flex">
-                  {row.map((cell, cIdx) => (
-                    <div
-                      key={cIdx}
-                      onMouseDown={() => handleCellDown(rIdx, cIdx)}
-                      onMouseEnter={() => handleCellEnter(rIdx, cIdx)}
-                      className={`w-9 h-9 border border-outline-variant/20 cursor-crosshair transition-colors rounded-sm ${
-                        cell === 1
-                          ? "bg-primary-container shadow-inner"
-                          : "bg-surface-container-lowest hover:bg-primary-container/20"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <p className="text-xs text-on-surface-variant">
@@ -555,7 +587,15 @@ export default function AdminEditorPage() {
                   </span>
                   {validation.valid ? "Solvable by logic alone!" : validation.reason}
                 </div>
-                {difficultyHint && (
+
+                {!validation.valid && (
+                  <div className="text-xs text-on-surface-variant">
+                    <div>문제 있는 행: {validation.invalidRows?.length ? validation.invalidRows.map((i) => i + 1).join(", ") : "없음"}</div>
+                    <div>문제 있는 열: {validation.invalidCols?.length ? validation.invalidCols.map((i) => i + 1).join(", ") : "없음"}</div>
+                  </div>
+                )}
+
+                {difficultyHint && validation.valid && (
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-sm">
                     <span
                       className="material-symbols-outlined text-base text-secondary"

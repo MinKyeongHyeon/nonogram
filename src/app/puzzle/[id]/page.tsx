@@ -15,23 +15,47 @@ export default function PuzzlePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = Number(params.id);
-  const { currentPuzzle, initPuzzle, setSourcePackDifficulty, status, timer, lives, tickTimer } = usePuzzleStore();
+  const { currentPuzzle, initPuzzle, setSourcePackDifficulty, setSourcePackTitle, status, timer, lives, tickTimer } =
+    usePuzzleStore();
   const [loading, setLoading] = useState(true);
   const [touchMode, setTouchMode] = useState<"fill" | "mark">("fill");
   const [mounted, setMounted] = useState(false);
 
+  const DIFFICULTY_TO_SLUG: Record<string, string> = {
+    easy: "free-easy",
+    medium: "free-medium",
+    hard: "free-hard",
+  };
+
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    fetchPuzzleById(id).then((puzzle) => {
+    fetchPuzzleById(id).then(async (puzzle) => {
       if (puzzle) {
         initPuzzle(puzzle);
         const packParam = searchParams.get("pack");
         setSourcePackDifficulty(packParam);
+
+        if (packParam && DIFFICULTY_TO_SLUG[packParam]) {
+          try {
+            const r = await fetch(`/api/packages?slug=${DIFFICULTY_TO_SLUG[packParam]}`);
+            const json = await r.json();
+            if (json.ok && json.data) {
+              setSourcePackTitle((json.data as { title: string }).title);
+            } else {
+              setSourcePackTitle(null);
+            }
+          } catch {
+            setSourcePackTitle(null);
+          }
+        } else {
+          setSourcePackTitle(null);
+        }
       }
       setLoading(false);
     });
-  }, [id, initPuzzle, setSourcePackDifficulty, searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, initPuzzle, setSourcePackDifficulty, setSourcePackTitle, searchParams]);
 
   // Timer
   useEffect(() => {

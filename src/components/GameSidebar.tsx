@@ -14,7 +14,7 @@ interface GameSidebarProps {
 }
 
 export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSidebarProps) {
-  const { currentPuzzle, status, useHint, hints, reset } = usePuzzleStore();
+  const { currentPuzzle, status, useHint, hints, reset, sourcePackTitle } = usePuzzleStore();
   const { sound, toggleSound } = useSettingsStore();
   const { t } = useTranslation();
   const g = t.game;
@@ -27,6 +27,8 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
       : currentPuzzle?.difficulty === "medium"
         ? g.sweetPack
         : g.challengePack;
+
+  const packLabel = sourcePackTitle ?? difficultyLabel;
 
   if (mobile) {
     return (
@@ -93,7 +95,7 @@ export default function GameSidebar({ mobile, touchMode, setTouchMode }: GameSid
           </div>
         </div>
         <h2 className="font-headline text-xl font-black text-primary">Level {currentPuzzle?.id ?? 1}</h2>
-        <p className="font-body text-sm font-semibold text-on-surface-variant">{difficultyLabel}</p>
+        <p className="font-body text-sm font-semibold text-on-surface-variant">{packLabel}</p>
       </div>
 
       {/* Mode & Action Buttons */}
