@@ -171,26 +171,52 @@ export function solveNonogram(
  * Validate that a puzzle's solution can be uniquely determined by logic alone.
  * The clues must lead the solver to the exact same solution.
  */
-export function validatePuzzle(solution: number[][], rowClues: number[][], colClues: number[][]): {
+export function validatePuzzle(
+  solution: number[][],
+  rowClues: number[][],
+  colClues: number[][],
+): {
   valid: boolean;
   reason?: string;
+  invalidRows?: number[];
+  invalidCols?: number[];
 } {
   const result = solveNonogram(rowClues, colClues);
 
-  if (!result.solved) {
-    return { valid: false, reason: "Puzzle cannot be solved by logic alone (requires guessing)" };
-  }
+  const rows = solution.length;
+  const cols = solution[0]?.length ?? 0;
+  const invalidRows: number[] = [];
+  const invalidCols: number[] = [];
 
-  // Verify the solved grid matches the intended solution
-  for (let r = 0; r < solution.length; r++) {
-    for (let c = 0; c < solution[0].length; c++) {
+  // Collect mismatching rows/cols (if any)
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
       if (result.grid[r][c] !== solution[r][c]) {
-        return { valid: false, reason: "Solver found a different solution — puzzle may have multiple solutions" };
+        if (!invalidRows.includes(r)) invalidRows.push(r);
+        if (!invalidCols.includes(c)) invalidCols.push(c);
       }
     }
   }
 
-  return { valid: true };
+  if (!result.solved) {
+    return {
+      valid: false,
+      reason: "Puzzle cannot be solved by logic alone (requires guessing)",
+      invalidRows,
+      invalidCols,
+    };
+  }
+
+  if (invalidRows.length > 0 || invalidCols.length > 0) {
+    return {
+      valid: false,
+      reason: "Solver found a different solution — puzzle may have multiple solutions",
+      invalidRows,
+      invalidCols,
+    };
+  }
+
+  return { valid: true, invalidRows: [], invalidCols: [] };
 }
 
 // ─── Puzzle Generator ───────────────────────────────────────────

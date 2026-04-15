@@ -12,6 +12,7 @@ interface HistoryStep {
 interface PuzzleState {
   currentPuzzle: Puzzle | null;
   sourcePackDifficulty: string | null;
+  sourcePackTitle: string | null;
   grid: CellState[][];
   lives: number;
   status: "idle" | "playing" | "gameover" | "cleared";
@@ -24,6 +25,7 @@ interface PuzzleState {
   // Actions
   initPuzzle: (puzzle: Puzzle) => void;
   setSourcePackDifficulty: (difficulty: string | null) => void;
+  setSourcePackTitle: (title: string | null) => void;
   handleClick: (row: number, col: number, isRightClick?: boolean, modeOverride?: "fill" | "mark") => void;
   undo: () => void;
   redo: () => void;
@@ -41,6 +43,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     (set, get) => ({
       currentPuzzle: null,
       sourcePackDifficulty: null,
+      sourcePackTitle: null,
       grid: [],
       lives: MAX_LIVES,
       status: "idle",
@@ -69,6 +72,7 @@ export const usePuzzleStore = create<PuzzleState>()(
       },
 
       setSourcePackDifficulty: (difficulty) => set({ sourcePackDifficulty: difficulty }),
+      setSourcePackTitle: (title) => set({ sourcePackTitle: title }),
 
       handleClick: (row, col, isRightClick = false, modeOverride?: "fill" | "mark") => {
         const { currentPuzzle, grid, status, lives, history, historyIndex } = get();
